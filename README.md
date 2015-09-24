@@ -7,7 +7,7 @@ Player is a robot
 Robot digs useless and useful materials in self-dug and natural caves
 
 
-Step 1. The natural cave generator.
+###Step 1. The natural cave generator.###
 
 + Create full (solid rock) land of size width, height
 + Determine amount of caves based on area of land (width x height)
@@ -21,7 +21,7 @@ Step 1. The natural cave generator.
 + Return finished land with caves
 
 
-Step 2. The Visualizer.
+###Step 2. The Visualizer.###
 
 + Create a visualizer to visualize the caves, to make sure the generator doesn't need immediate tweaking
 + This can either be graphical, or it can output to a file
