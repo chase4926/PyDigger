@@ -7,6 +7,12 @@ def offsetY(angle, radius):
   return -1 * math.cos((float(angle) / 180) * math.pi) * float(radius)
 
 class CaveGenerator:
+  def __init__(self, width=40, height=80, angle_deviation=40, divisor=200):
+    self.angle_deviation = angle_deviation
+    self.width = width
+    self.height = height
+    self.divisor = 200
+
   def __str__(self):
     string = ""
     solid_char="X"
@@ -20,26 +26,23 @@ class CaveGenerator:
       string += "\n"
     return string
 
-  def generateCave(self, width=80, height=50):
-    # Store width and height for later
-    self.width = width
-    self.height = height
+  def generateCave(self):
     # Start with a full land mass
-    self.land = self.createFullLand(width, height, True)
+    self.land = self.createFullLand(self.width, self.height, True)
     # Determine amount of caves to carve
-    caves = self.determineAmountOfCaves(width*height)
+    caves = self.determineAmountOfCaves(self.width * self.height, self.divisor)
     # Iterate through caves to carve all caves
     for i in range(caves):
       # Pick random spot to start cave
-      x = random.sample(range(width), 1)[0]
-      y = random.sample(range(height), 1)[0]
+      x = random.sample(range(self.width), 1)[0]
+      y = random.sample(range(self.height), 1)[0]
       # Determine length of walk based on function of area
       length = self.determineLengthOfWalk(self.land)
       # Pick a random angle to walk in
       angle = random.sample(range(360), 1)[0]
       for step in range(length):
         # Deviate angle
-        angle = self.deviateAngle(angle)
+        angle = self.deviateAngle(angle, self.angle_deviation)
         # Calculate probable x and y coordinates
         next_x = x + offsetX(angle, 1)
         next_y = y + offsetY(angle, 1)
@@ -99,6 +102,20 @@ class CaveGenerator:
       land.append(width * [fill])
     return land
 
+  def fillInEdges(self, land):
+    # Makes the edges of land solid
+    height = len(land)
+    width = len(land[0])
+    for y in range(height):
+      if y == 0 or y == height - 1:
+        for x in range(width):
+          land[y][x] = True
+      else:
+        land[y][0] = True
+        land[y][width-1] = True
+    return land
+      
+
   def determineLengthOfWalk(self, land):
     solidity = 0
     area = len(land) * len(land[0])
@@ -110,8 +127,8 @@ class CaveGenerator:
     length = int(round( ((float(solidity) / area) * math.sqrt(area)) / 2 ))
     return length
 
-  def determineAmountOfCaves(self, area):
-    caves = area / 100.0
+  def determineAmountOfCaves(self, area, divisor=100):
+    caves = float(area) / float(divisor)
     return int(round(caves))
 
 # Seed with the current time
@@ -119,5 +136,5 @@ seed = time.strftime("%y%m%d%H%M%S")
 random.seed(seed)
 
 # --Debug script--
-cave_generator = CaveGenerator()
+cave_generator = CaveGenerator(80, 50, 60)
 print cave_generator.generateCave()
