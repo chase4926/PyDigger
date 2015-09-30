@@ -1,17 +1,21 @@
 
-import random, time, math
+import random, math
+
 
 def offsetX(angle, radius):
   return math.sin((float(angle) / 180) * math.pi) * float(radius)
+
 def offsetY(angle, radius):
   return -1 * math.cos((float(angle) / 180) * math.pi) * float(radius)
 
+
 class CaveGenerator:
-  def __init__(self, width=40, height=80, angle_deviation=60, divisor=200):
+  def __init__(self, width=40, height=80, angle_deviation=60, caves_percent=100):
     self.angle_deviation = angle_deviation
     self.width = width
     self.height = height
-    self.divisor = divisor
+    self.caves_percent = caves_percent
+    self.land = []
 
   def __str__(self):
     string = ""
@@ -30,7 +34,7 @@ class CaveGenerator:
     # Start with a full land mass
     self.land = self.createFullLand(self.width, self.height, True)
     # Determine amount of caves to carve
-    caves = self.determineAmountOfCaves(self.width * self.height, self.divisor)
+    caves = self.determineAmountOfCaves(self.width * self.height, self.caves_percent)
     # Iterate through caves to carve all caves
     for i in range(caves):
       # Pick random spot to start cave
@@ -127,14 +131,14 @@ class CaveGenerator:
     length = int(round( ((float(solidity) / area) * math.sqrt(area)) / 2 ))
     return length
 
-  def determineAmountOfCaves(self, area, divisor=100):
-    caves = float(area) / float(divisor)
+  def determineAmountOfCaves(self, area, caves_percent=100):
+    # caves_percent is the percentage of caves to have - 50 = 50%
+    caves = float(area) / 200.0 # 200.0 gives a really nice amount of caves per land
+    # Modify caves to the percent wanted
+    caves = caves * (float(caves_percent) / 100.0)
     return int(round(caves))
 
-# Seed with the current time
-seed = time.strftime("%y%m%d%H%M%S")
-random.seed(seed)
 
-# --Debug script--
-cave_generator = CaveGenerator(160, 60, 60, 200)
-print cave_generator.generateCave()
+## --Debug script--
+#cave_generator = CaveGenerator(width=160, height=62, angle_deviation=60, caves_percent=100)
+#print cave_generator.generateCave()
