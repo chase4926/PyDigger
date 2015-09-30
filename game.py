@@ -7,11 +7,11 @@ def offsetY(angle, radius):
   return -1 * math.cos((float(angle) / 180) * math.pi) * float(radius)
 
 class CaveGenerator:
-  def __init__(self, width=40, height=80, angle_deviation=40, divisor=200):
+  def __init__(self, width=40, height=80, angle_deviation=60, divisor=200):
     self.angle_deviation = angle_deviation
     self.width = width
     self.height = height
-    self.divisor = 200
+    self.divisor = divisor
 
   def __str__(self):
     string = ""
@@ -136,5 +136,5 @@ seed = time.strftime("%y%m%d%H%M%S")
 random.seed(seed)
 
 # --Debug script--
-cave_generator = CaveGenerator(80, 50, 60)
+cave_generator = CaveGenerator(160, 60, 60, 200)
 print cave_generator.generateCave()
