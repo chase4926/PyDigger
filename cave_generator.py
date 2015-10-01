@@ -2,6 +2,9 @@
 import random, math
 
 
+def distance(x1, y1, x2, y2):
+  return math.sqrt( ((float(x2) - float(x1)) ** 2) + ((float(y2) - float(y1)) ** 2) )
+
 def offsetX(angle, radius):
   return math.sin((float(angle) / 180) * math.pi) * float(radius)
 
@@ -35,6 +38,9 @@ class CaveGenerator:
     self.land = self.createFullLand(self.width, self.height, True)
     # Determine amount of caves to carve
     caves = self.determineAmountOfCaves(self.width * self.height, self.caves_percent)
+    # Determine size of rooms
+    room_size = self.determineRoomSize(self.land)
+    
     # Iterate through caves to carve all caves
     for i in range(caves):
       # Pick random spot to start cave
@@ -44,6 +50,10 @@ class CaveGenerator:
       length = self.determineLengthOfWalk(self.land)
       # Pick a random angle to walk in
       angle = random.sample(range(360), 1)[0]
+      # Boolean representing whether a room was made yet or not
+      # ONLY 1 room/cave (hopefully this works well)
+      cave_made = False
+      
       for step in range(length):
         # Deviate angle
         angle = self.deviateAngle(angle, self.angle_deviation)
@@ -65,7 +75,13 @@ class CaveGenerator:
         x = next_x
         y = next_y
         # Dig the corner points!
-        self.digCornerPoints(self.land, next_cornerpoints)
+        self.digPoints(self.land, next_cornerpoints)
+        # See whether we want a room or not
+        if not cave_made and self.roomWanted(self.land):
+          cave_made = True
+          print "room in cave: " + str(i)
+          room_points = self.getRoomPoints(room_size)
+          self.digPoints(self.land, self.translateRoomPoints(room_points, x, y))
     # Return the finished land mass with added caves
     return self
 
@@ -75,8 +91,8 @@ class CaveGenerator:
            self.pointInBounds(*corner_points[2]) and
            self.pointInBounds(*corner_points[3]))
 
-  def digCornerPoints(self, land, corner_points):
-    for point in corner_points:
+  def digPoints(self, land, points):
+    for point in points:
       x, y = point
       land[y][x] = False
 
@@ -88,6 +104,23 @@ class CaveGenerator:
     for modx in (-0.5, 0.5):
       for mody in (-0.5, 0.5):
         points.insert(0, (int(round(x + modx)), int(round(y + mody))))
+    return points
+
+  def translateRoomPoints(self, points, x, y):
+    result_points = []
+    for point in points:
+      ox, oy = point
+      result_points.insert(0, (int(round(ox+x)), int(round(oy+y))))
+    return result_points
+
+  def getRoomPoints(self, size):
+    points = []
+    center = float(size) / 2.0
+    print center
+    for y in range(size):
+      for x in range(size):
+        if distance(x, y, center, center) <= center:
+          points.insert(0, (x - int(center), y - int(center)))
     return points
 
   def deviateAngle(self, angle, deviation=40):
@@ -118,17 +151,43 @@ class CaveGenerator:
         land[y][0] = True
         land[y][width-1] = True
     return land
-      
 
-  def determineLengthOfWalk(self, land):
+  def getLandArea(self, land):
+    return len(land) * len(land[0])
+
+  def getLandSolidity(self, land):
+    # Returns a float between 0 and 1 representing the percent solid
+    # the land is.
     solidity = 0
-    area = len(land) * len(land[0])
     for layer in land:
       solidity += layer.count(True)
+    return float(solidity) / float(self.getLandArea(land))
+
+  def roomWanted(self, land, percent=75):
+    # This returns True or False
+    # True = Make a room
+    # First the land needs to be over percent% solid
+    solidity = self.getLandSolidity(land)
+    if solidity > (float(percent) / 100.0):
+      # Now that we know a room could "fit", we need to randomly decide
+      if random.sample(range(self.determineLengthOfWalk(land) * 2), 1)[0] == 0:
+        return True
+      else:
+        return False
+    else:
+      return False
+
+  def determineRoomSize(self, land):
+    area = self.getLandArea(land)
+    return int(round( math.sqrt(area) / 10.0 ))
+
+  def determineLengthOfWalk(self, land):
+    solidity = self.getLandSolidity(land)
+    area = self.getLandArea(land)
     # The length of the cave is equal to the percentage of solid mass applied
-    # to the square root of the area divided by 2
+    # to the square root of the area then divided by 2
     # (square root of area is smaller than longest side)
-    length = int(round( ((float(solidity) / area) * math.sqrt(area)) / 2 ))
+    length = int(round( (solidity * math.sqrt(area)) / 2 ))
     return length
 
   def determineAmountOfCaves(self, area, caves_percent=100):

@@ -15,9 +15,10 @@ Robot digs useless and useful materials in self-dug and natural caves
   + Pick a random spot in the land
   + Determine length of walk based on solidity of cave, up to a maximum based on area
   + Walk away from that spot in a random angle, and deviate slighty randomly
-    + As walking, excavate all around randomly, and tick steps taken
-    + Very occasionally, randomly make a small cavern around current location
     + If a wall is hit, pick rotation and adjust angle 45-90 degrees until aiming away from wall
+    + As walking, excavate all around randomly
+    + Very occasionally, randomly make a small cavern around current location
+      + Determine room diameter based on area of cave
 + Return finished land with caves
 
 
