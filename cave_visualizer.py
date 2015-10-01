@@ -26,7 +26,9 @@ random.seed(seed)
 pygame.init()
 COLOR_BLACK = (0, 0, 0)
 COLOR_BROWN = (100, 49, 12)
-SCALE = 8
+WIDTH = 250
+HEIGHT = 150
+SCALE = 4
 
 
 def draw_cave(surface, cave):
@@ -40,7 +42,7 @@ def draw_cave(surface, cave):
 
 def main():
   # Generate a cave
-  cave_gen = cgen.CaveGenerator(width=160, height=100, angle_deviation=60, caves_percent=100)
+  cave_gen = cgen.CaveGenerator(width=WIDTH, height=HEIGHT, angle_deviation=60, caves_percent=100)
   cave_gen.generateCave()
   # Set up the window
   displaysurf = pygame.display.set_mode((cave_gen.width*SCALE, cave_gen.height*SCALE), pygame.DOUBLEBUF)
