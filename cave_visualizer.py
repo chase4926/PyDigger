@@ -42,7 +42,8 @@ def draw_cave(surface, cave):
 
 def main():
   # Generate a cave
-  cave_gen = cgen.CaveGenerator(width=WIDTH, height=HEIGHT, angle_deviation=60, caves_percent=100)
+  # Every day I seem to prefer different settings on this
+  cave_gen = cgen.CaveGenerator(width=WIDTH, height=HEIGHT, angle_deviation=45, caves_percent=100)
   cave_gen.generateCave()
   # Set up the window
   displaysurf = pygame.display.set_mode((cave_gen.width*SCALE, cave_gen.height*SCALE), pygame.DOUBLEBUF)

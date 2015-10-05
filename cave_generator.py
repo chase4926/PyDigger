@@ -52,7 +52,7 @@ class CaveGenerator:
       angle = random.sample(range(360), 1)[0]
       # Boolean representing whether a room was made yet or not
       # ONLY 1 room/cave (hopefully this works well)
-      cave_made = False
+      room_made = False
       
       for step in range(length):
         # Deviate angle
@@ -77,9 +77,8 @@ class CaveGenerator:
         # Dig the corner points!
         self.digPoints(self.land, next_cornerpoints)
         # See whether we want a room or not
-        if not cave_made and self.roomWanted(self.land):
-          cave_made = True
-          print "room in cave: " + str(i)
+        if not room_made and self.roomWanted(self.land):
+          room_made = True
           room_points = self.getRoomPoints(room_size)
           self.digPoints(self.land, self.translateRoomPoints(room_points, x, y))
     # Return the finished land mass with added caves
@@ -94,7 +93,8 @@ class CaveGenerator:
   def digPoints(self, land, points):
     for point in points:
       x, y = point
-      land[y][x] = False
+      if self.pointInBounds(x, y):
+        land[y][x] = False
 
   def pointInBounds(self, x, y):
     return (x >= 0 and x < self.width) and (y >= 0 and y < self.height)
@@ -116,7 +116,6 @@ class CaveGenerator:
   def getRoomPoints(self, size):
     points = []
     center = float(size) / 2.0
-    print center
     for y in range(size):
       for x in range(size):
         if distance(x, y, center, center) <= center:
@@ -178,8 +177,11 @@ class CaveGenerator:
       return False
 
   def determineRoomSize(self, land):
-    area = self.getLandArea(land)
-    return int(round( math.sqrt(area) / 10.0 ))
+    # This should really just be a static number if the path width is static
+    # If the walk path ever excavates more than 1 around it, change this to an equation
+    #area = self.getLandArea(land)
+    #return int(round( math.sqrt(area) / 10.0 ))
+    return 9
 
   def determineLengthOfWalk(self, land):
     solidity = self.getLandSolidity(land)
@@ -192,7 +194,7 @@ class CaveGenerator:
 
   def determineAmountOfCaves(self, area, caves_percent=100):
     # caves_percent is the percentage of caves to have - 50 = 50%
-    caves = float(area) / 200.0 # 200.0 gives a really nice amount of caves per land
+    caves = float(area) / 400.0 # 400.0 gives a really nice amount of caves per land
     # Modify caves to the percent wanted
     caves = caves * (float(caves_percent) / 100.0)
     return int(round(caves))
