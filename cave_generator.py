@@ -45,8 +45,7 @@ class CaveGenerator:
     # Iterate through caves to carve all caves
     for i in range(caves):
       # Pick random spot to start cave
-      x = random.sample(range(self.width), 1)[0]
-      y = random.sample(range(self.height), 1)[0]
+      x, y = self.getRandomPoint()
       # Determine length of walk based on function of area
       length = self.getLengthOfWalk()
       # Pick a random angle to walk in
@@ -149,6 +148,12 @@ class CaveGenerator:
         land[y][0] = True
         land[y][width-1] = True
     return land
+
+  def getRandomPoint(self):
+    # Returns a random point in land
+    x = random.sample(range(self.width), 1)[0]
+    y = random.sample(range(self.height), 1)[0]
+    return x, y
 
   def getLandSolidity(self):
     # Returns a float between 0 and 1 representing the percent solid
