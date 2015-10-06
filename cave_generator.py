@@ -17,6 +17,7 @@ class CaveGenerator:
     self.angle_deviation = angle_deviation
     self.width = width
     self.height = height
+    self.area = width * height
     self.caves_percent = caves_percent
     self.land = []
 
@@ -35,11 +36,11 @@ class CaveGenerator:
 
   def generateCave(self):
     # Start with a full land mass
-    self.land = self.createFullLand(self.width, self.height, True)
+    self.land = self.createFullLand()
     # Determine amount of caves to carve
-    caves = self.determineAmountOfCaves(self.width * self.height, self.caves_percent)
+    caves = self.getAmountOfCaves()
     # Determine size of rooms
-    room_size = self.determineRoomSize(self.land)
+    room_size = self.getRoomSize()
     
     # Iterate through caves to carve all caves
     for i in range(caves):
@@ -47,16 +48,16 @@ class CaveGenerator:
       x = random.sample(range(self.width), 1)[0]
       y = random.sample(range(self.height), 1)[0]
       # Determine length of walk based on function of area
-      length = self.determineLengthOfWalk(self.land)
+      length = self.getLengthOfWalk()
       # Pick a random angle to walk in
       angle = random.sample(range(360), 1)[0]
       # Boolean representing whether a room was made yet or not
-      # ONLY 1 room/cave (hopefully this works well)
+      # Max 1 room per cave (hopefully this works well)
       room_made = False
       
       for step in range(length):
         # Deviate angle
-        angle = self.deviateAngle(angle, self.angle_deviation)
+        angle = self.deviateAngle(angle)
         # Calculate probable x and y coordinates
         next_x = x + offsetX(angle, 1)
         next_y = y + offsetY(angle, 1)
@@ -71,7 +72,6 @@ class CaveGenerator:
             next_y = y + offsetY(angle, 1)
             next_cornerpoints = self.getCornerPoints(next_x, next_y)
         # The corner points are all in bounds, we'll keep those coordinates
-        #print angle
         x = next_x
         y = next_y
         # Dig the corner points!
@@ -122,20 +122,19 @@ class CaveGenerator:
           points.insert(0, (x - int(center), y - int(center)))
     return points
 
-  def deviateAngle(self, angle, deviation=40):
+  def deviateAngle(self, angle):
     # Deviates randomly by deviation
     # mult deterines clockwise / counter clockwise
     mult = random.sample([-1, 1], 1)[0]
-    return angle + (mult * (random.sample(range(deviation), 1)[0]))
+    return angle + (mult * (random.sample(range(self.angle_deviation), 1)[0]))
 
   def deviateAngleFromWall(self, angle, mult):
     return angle + (mult * (random.sample(range(45), 1)[0]))
 
-  def createFullLand(self, width, height, fill=None):
-    #land = height*[width * [fill]]
+  def createFullLand(self, fill=True):
     land = []
-    for y in range(height):
-      land.append(width * [fill])
+    for y in range(self.height):
+      land.append(self.width * [fill])
     return land
 
   def fillInEdges(self, land):
@@ -151,52 +150,46 @@ class CaveGenerator:
         land[y][width-1] = True
     return land
 
-  def getLandArea(self, land):
-    return len(land) * len(land[0])
-
-  def getLandSolidity(self, land):
+  def getLandSolidity(self):
     # Returns a float between 0 and 1 representing the percent solid
     # the land is.
     solidity = 0
-    for layer in land:
+    for layer in self.land:
       solidity += layer.count(True)
-    return float(solidity) / float(self.getLandArea(land))
+    return float(solidity) / float(self.area)
 
   def roomWanted(self, land, percent=75):
     # This returns True or False
     # True = Make a room
     # First the land needs to be over percent% solid
-    solidity = self.getLandSolidity(land)
+    solidity = self.getLandSolidity()
     if solidity > (float(percent) / 100.0):
       # Now that we know a room could "fit", we need to randomly decide
-      if random.sample(range(self.determineLengthOfWalk(land) * 2), 1)[0] == 0:
+      if random.sample(range(self.getLengthOfWalk() * 2), 1)[0] == 0:
         return True
       else:
         return False
     else:
       return False
 
-  def determineRoomSize(self, land):
+  def getRoomSize(self):
     # This should really just be a static number if the path width is static
     # If the walk path ever excavates more than 1 around it, change this to an equation
-    #area = self.getLandArea(land)
-    #return int(round( math.sqrt(area) / 10.0 ))
+    #return int(round( math.sqrt(self.area) / 10.0 ))
     return 9
 
-  def determineLengthOfWalk(self, land):
-    solidity = self.getLandSolidity(land)
-    area = self.getLandArea(land)
+  def getLengthOfWalk(self):
     # The length of the cave is equal to the percentage of solid mass applied
     # to the square root of the area then divided by 2
     # (square root of area is smaller than longest side)
-    length = int(round( (solidity * math.sqrt(area)) / 2 ))
-    return length
+    solidity = self.getLandSolidity()
+    return int(round( (solidity * math.sqrt(self.area)) / 2 ))
 
-  def determineAmountOfCaves(self, area, caves_percent=100):
+  def getAmountOfCaves(self):
     # caves_percent is the percentage of caves to have - 50 = 50%
-    caves = float(area) / 400.0 # 400.0 gives a really nice amount of caves per land
+    caves = float(self.area) / 400.0 # 400.0 gives a really nice amount of caves per land
     # Modify caves to the percent wanted
-    caves = caves * (float(caves_percent) / 100.0)
+    caves = caves * (float(self.caves_percent) / 100.0)
     return int(round(caves))
 
 
