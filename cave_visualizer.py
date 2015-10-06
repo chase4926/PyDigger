@@ -44,7 +44,7 @@ def main():
   # Generate a cave
   # Every day I seem to prefer different settings on this
   cave_gen = cgen.CaveGenerator(width=WIDTH, height=HEIGHT, angle_deviation=45, caves_percent=100)
-  cave_gen.generateCave()
+  cave_gen.generateCave(y_range=(100, 150))
   # Set up the window
   displaysurf = pygame.display.set_mode((cave_gen.width*SCALE, cave_gen.height*SCALE), pygame.DOUBLEBUF)
   pygame.display.set_caption("Cave Visualizer")
@@ -67,7 +67,8 @@ def main():
       if event.type == KEYDOWN:
         if event.key == K_SPACE:
           print "Generating new cave..."
-          cave_gen.generateCave()
+          cave_gen.caves_percent = 25
+          cave_gen.generateCave(y_range=(0, 100))
           draw_cave(cave_surf, cave_gen)
           pygame.transform.scale(cave_surf, (cave_gen.width*SCALE, cave_gen.height*SCALE), draw_surf)
           displaysurf.blit(draw_surf, (0, 0))

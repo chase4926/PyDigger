@@ -19,7 +19,8 @@ class CaveGenerator:
     self.height = height
     self.area = width * height
     self.caves_percent = caves_percent
-    self.land = []
+    # Start with a full land mass
+    self.land = self.createFullLand()
 
   def __str__(self):
     string = ""
@@ -34,9 +35,7 @@ class CaveGenerator:
       string += "\n"
     return string
 
-  def generateCave(self):
-    # Start with a full land mass
-    self.land = self.createFullLand()
+  def generateCave(self, x_range=None, y_range=None):
     # Determine amount of caves to carve
     caves = self.getAmountOfCaves()
     # Determine size of rooms
@@ -45,7 +44,7 @@ class CaveGenerator:
     # Iterate through caves to carve all caves
     for i in range(caves):
       # Pick random spot to start cave
-      x, y = self.getRandomPoint()
+      x, y = self.getRandomPoint(x_range, y_range)
       # Determine length of walk based on function of area
       length = self.getLengthOfWalk()
       # Pick a random angle to walk in
@@ -149,10 +148,17 @@ class CaveGenerator:
         land[y][width-1] = True
     return land
 
-  def getRandomPoint(self):
+  def getRandomPoint(self, x_range=None, y_range=None):
     # Returns a random point in land
-    x = random.sample(range(self.width), 1)[0]
-    y = random.sample(range(self.height), 1)[0]
+    # n_range => (min, max)
+    if x_range != None:
+      x = random.sample(range(abs(x_range[0] - x_range[1])), 1)[0] + x_range[0]
+    else:
+      x = random.sample(range(self.width), 1)[0]
+    if y_range != None:
+      y = random.sample(range(abs(y_range[0] - y_range[1])), 1)[0] + y_range[0]
+    else:
+      y = random.sample(range(self.height), 1)[0]
     return x, y
 
   def getLandSolidity(self):
