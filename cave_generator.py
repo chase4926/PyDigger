@@ -1,15 +1,6 @@
 
 import random, math
-
-
-def distance(x1, y1, x2, y2):
-  return math.sqrt( ((float(x2) - float(x1)) ** 2) + ((float(y2) - float(y1)) ** 2) )
-
-def offsetX(angle, radius):
-  return math.sin((float(angle) / 180) * math.pi) * float(radius)
-
-def offsetY(angle, radius):
-  return -1 * math.cos((float(angle) / 180) * math.pi) * float(radius)
+from lib_misc import *
 
 
 class CaveGenerator:
@@ -48,7 +39,7 @@ class CaveGenerator:
       # Determine length of walk based on function of area
       length = self.getLengthOfWalk()
       # Pick a random angle to walk in
-      angle = random.sample(range(360), 1)[0]
+      angle = random.randint(0, 359)
       # Boolean representing whether a room was made yet or not
       # Max 1 room per cave (hopefully this works well)
       room_made = False
@@ -124,10 +115,10 @@ class CaveGenerator:
     # Deviates randomly by deviation
     # mult deterines clockwise / counter clockwise
     mult = random.sample([-1, 1], 1)[0]
-    return angle + (mult * (random.sample(range(self.angle_deviation), 1)[0]))
+    return angle + (mult * (random.randint(0, self.angle_deviation)))
 
   def deviateAngleFromWall(self, angle, mult):
-    return angle + (mult * (random.sample(range(45), 1)[0]))
+    return angle + (mult * (random.randint(25, 90)))
 
   def createFullLand(self, fill=True):
     land = []
@@ -152,13 +143,13 @@ class CaveGenerator:
     # Returns a random point in land
     # n_range => (min, max)
     if x_range != None:
-      x = random.sample(range(abs(x_range[0] - x_range[1])), 1)[0] + x_range[0]
+      x = random.randint(0, abs(x_range[0] - x_range[1]) - 1) + x_range[0]
     else:
-      x = random.sample(range(self.width), 1)[0]
+      x = random.randint(0, self.width - 1)
     if y_range != None:
-      y = random.sample(range(abs(y_range[0] - y_range[1])), 1)[0] + y_range[0]
+      y = random.randint(0, abs(y_range[0] - y_range[1]) - 1) + y_range[0]
     else:
-      y = random.sample(range(self.height), 1)[0]
+      y = random.randint(0, self.height - 1)
     return x, y
 
   def getLandSolidity(self):
@@ -176,7 +167,7 @@ class CaveGenerator:
     solidity = self.getLandSolidity()
     if solidity > (float(percent) / 100.0):
       # Now that we know a room could "fit", we need to randomly decide
-      if random.sample(range(self.getLengthOfWalk() * 2), 1)[0] == 0:
+      if random.randint(0, (self.getLengthOfWalk() * 2) - 1) == 0:
         return True
       else:
         return False
