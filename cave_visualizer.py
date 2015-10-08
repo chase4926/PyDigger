@@ -29,7 +29,9 @@ pygame.init()
 # Various varibles
 FPS = 0 # 0 = Unlimited
 COLOR_BLACK = (0, 0, 0)
+COLOR_PURPLE = (255, 0, 255)
 COLOR_BROWN = (100, 49, 12)
+BACKGROUND_IMG = pygame.image.load("./images/tileable_cave_background.png")
 # Cave generator config
 WIDTH = 250
 HEIGHT = 150
@@ -54,17 +56,23 @@ class GameWindow:
     self.redraw_cave()
 
   def paint_cave(self, cave, surface):
+    surface.fill(COLOR_BLACK)
     land = cave.land
     for y in range(len(land)):
       for x in range(len(land[y])):
         if land[y][x]:
           surface.set_at((x, y), COLOR_BROWN)
         else:
-          surface.set_at((x, y), COLOR_BLACK)
+          surface.set_at((x, y), COLOR_PURPLE)
 
   def redraw_cave(self):
+    # Fill with black to get rid of previous blits
+    self.displaysurf.fill(COLOR_BLACK)
     self.paint_cave(self.cave_gen, self.cave_surf)
     pygame.transform.scale(self.cave_surf, (self.cave_gen.width*SCALE, self.cave_gen.height*SCALE), self.draw_surf)
+    # Remove background color for transparency
+    self.draw_surf.set_colorkey(COLOR_PURPLE)
+    #self.displaysurf.blit(BACKGROUND_IMG, (0, 0))
     self.displaysurf.blit(self.draw_surf, (0, 0))
 
   def main(self):
