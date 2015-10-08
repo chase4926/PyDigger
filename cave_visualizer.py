@@ -16,6 +16,7 @@ import pygame
 from pygame.locals import *
 # Local imports
 import cave_generator as cgen
+import gameclock
 
 
 # Seed with the current time
@@ -24,59 +25,77 @@ random.seed(seed)
 
 # Pygame setup
 pygame.init()
+
+# Various varibles
+FPS = 0 # 0 = Unlimited
 COLOR_BLACK = (0, 0, 0)
 COLOR_BROWN = (100, 49, 12)
-WIDTH = 250
-HEIGHT = 150
-SCALE = 4
+# Cave generator config
+WIDTH = 160
+HEIGHT = 90
+SCALE = 8
 
 
-def draw_cave(surface, cave):
-  land = cave.land
-  for y in range(len(land)):
-    for x in range(len(land[y])):
-      if land[y][x]:
-        surface.set_at((x, y), COLOR_BROWN)
-      else:
-        surface.set_at((x, y), COLOR_BLACK)
+class GameWindow:
+  def __init__(self):
+    # Generate a cave
+    # Every day I seem to prefer different settings on this
+    self.cave_gen = cgen.CaveGenerator(width=WIDTH, height=HEIGHT, angle_deviation=45, caves_percent=100)
+    self.cave_gen.generateCave(y_range=(60, 90))
+    # Set up the window
+    self.displaysurf = pygame.display.set_mode((self.cave_gen.width*SCALE, self.cave_gen.height*SCALE), pygame.DOUBLEBUF)
+    pygame.display.set_caption("Cave Visualizer")
+    self.clock = gameclock.GameClock(60, FPS)
+    # Surface to draw the cave on
+    self.cave_surf = pygame.Surface((self.cave_gen.width, self.cave_gen.height))
+    # Surface to scale the cave surface on
+    self.draw_surf = pygame.Surface((self.cave_gen.width*SCALE, self.cave_gen.height*SCALE))
+    # Draw & scale the cave
+    self.redraw_cave()
 
-def main():
-  # Generate a cave
-  # Every day I seem to prefer different settings on this
-  cave_gen = cgen.CaveGenerator(width=WIDTH, height=HEIGHT, angle_deviation=45, caves_percent=100)
-  cave_gen.generateCave(y_range=(100, 150))
-  # Set up the window
-  displaysurf = pygame.display.set_mode((cave_gen.width*SCALE, cave_gen.height*SCALE), pygame.DOUBLEBUF)
-  pygame.display.set_caption("Cave Visualizer")
-  # Surface to draw the cave on
-  cave_surf = pygame.Surface((cave_gen.width, cave_gen.height))
-  # Surface to scale the cave surface on
-  draw_surf = pygame.Surface((cave_gen.width*SCALE, cave_gen.height*SCALE))
-  # Draw & scale the cave
-  draw_cave(cave_surf, cave_gen)
-  pygame.transform.scale(cave_surf, (cave_gen.width*SCALE, cave_gen.height*SCALE), draw_surf)
-  # Blit cave drawing
-  displaysurf.blit(draw_surf, (0, 0))
-  
-  running = True
-  
-  while running:
+  def paint_cave(self, cave, surface):
+    land = cave.land
+    for y in range(len(land)):
+      for x in range(len(land[y])):
+        if land[y][x]:
+          surface.set_at((x, y), COLOR_BROWN)
+        else:
+          surface.set_at((x, y), COLOR_BLACK)
+
+  def redraw_cave(self):
+    self.paint_cave(self.cave_gen, self.cave_surf)
+    pygame.transform.scale(self.cave_surf, (self.cave_gen.width*SCALE, self.cave_gen.height*SCALE), self.draw_surf)
+    self.displaysurf.blit(self.draw_surf, (0, 0))
+
+  def main(self):
+    self.running = True
+    
+    while self.running:
+      self.clock.tick()
+      if self.clock.update_ready:
+        self.update()
+      if self.clock.frame_ready:
+        self.draw()
+      pygame.display.update()
+
+  def update(self):
     for event in pygame.event.get():
-      if event.type == QUIT:
-        running = False
-      if event.type == KEYDOWN:
-        if event.key == K_SPACE:
-          print "Generating new cave..."
-          cave_gen.caves_percent = 25
-          cave_gen.generateCave(y_range=(0, 100))
-          draw_cave(cave_surf, cave_gen)
-          pygame.transform.scale(cave_surf, (cave_gen.width*SCALE, cave_gen.height*SCALE), draw_surf)
-          displaysurf.blit(draw_surf, (0, 0))
-    pygame.display.update()
+        if event.type == QUIT:
+          self.running = False
+        if event.type == KEYDOWN:
+          if event.key == K_SPACE:
+            print "Generating new cave..."
+            self.cave_gen.caves_percent = 25
+            self.cave_gen.generateCave(y_range=(0, 60))
+            self.redraw_cave()
+
+  def draw(self):
+    pass
 
 
+window = GameWindow()
 # Start 'er up!
-main()
+window.main()
 # Deconstruct all pygame stuff
 pygame.quit()
 
