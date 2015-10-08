@@ -31,17 +31,17 @@ FPS = 0 # 0 = Unlimited
 COLOR_BLACK = (0, 0, 0)
 COLOR_BROWN = (100, 49, 12)
 # Cave generator config
-WIDTH = 160
-HEIGHT = 90
-SCALE = 8
+WIDTH = 250
+HEIGHT = 150
+SCALE = 4
 
 
 class GameWindow:
   def __init__(self):
     # Generate a cave
     # Every day I seem to prefer different settings on this
-    self.cave_gen = cgen.CaveGenerator(width=WIDTH, height=HEIGHT, angle_deviation=45, caves_percent=100)
-    self.cave_gen.generateCave(y_range=(60, 90))
+    self.cave_gen = cgen.CaveGenerator(width=WIDTH, height=HEIGHT, angle_deviation=45, caves_percent=75)
+    self.cave_gen.generateCave(y_range=(100, 140))
     # Set up the window
     self.displaysurf = pygame.display.set_mode((self.cave_gen.width*SCALE, self.cave_gen.height*SCALE), pygame.DOUBLEBUF)
     pygame.display.set_caption("Cave Visualizer")
@@ -86,7 +86,7 @@ class GameWindow:
           if event.key == K_SPACE:
             print "Generating new cave..."
             self.cave_gen.caves_percent = 25
-            self.cave_gen.generateCave(y_range=(0, 60))
+            self.cave_gen.generateCave(y_range=(10, 100))
             self.redraw_cave()
 
   def draw(self):

@@ -29,8 +29,6 @@ class CaveGenerator:
   def generateCave(self, x_range=None, y_range=None):
     # Determine amount of caves to carve
     caves = self.getAmountOfCaves()
-    # Determine size of rooms
-    room_size = self.getRoomSize()
     
     # Iterate through caves to carve all caves
     for i in range(caves):
@@ -40,9 +38,8 @@ class CaveGenerator:
       length = self.getLengthOfWalk()
       # Pick a random angle to walk in
       angle = random.randint(0, 359)
-      # Boolean representing whether a room was made yet or not
-      # Max 1 room per cave (hopefully this works well)
-      room_made = False
+      # Get path width list
+      path_width = getRandomGradient(length, 3, 5)
       
       for step in range(length):
         # Deviate angle
@@ -50,34 +47,33 @@ class CaveGenerator:
         # Calculate probable x and y coordinates
         next_x = x + offsetX(angle, 1)
         next_y = y + offsetY(angle, 1)
-        next_cornerpoints = self.getCornerPoints(next_x, next_y)
-        # If the corner points are out of the wall, deviate angle from wall
-        if not self.cornerPointsInBounds(next_cornerpoints):
+        next_points = self.getPathPoints(next_x, next_y, path_width[step])
+        # If the points are out of the wall, deviate angle from wall
+        if not self.pointsInBounds(next_points):
           # Pick clockwise or counter clockwise
           mult = random.sample([-1, 1], 1)[0]
-          while not self.cornerPointsInBounds(next_cornerpoints):
+          tries = 0
+          while not self.pointsInBounds(next_points) and tries < 8:
+            tries += 1
             angle = self.deviateAngleFromWall(angle, mult)
             next_x = x + offsetX(angle, 1)
             next_y = y + offsetY(angle, 1)
-            next_cornerpoints = self.getCornerPoints(next_x, next_y)
-        # The corner points are all in bounds, we'll keep those coordinates
+            next_points = self.getPathPoints(next_x, next_y, path_width[step])
+          if tries >= 8:
+            break
+        # The points are in bounds, we'll keep those coordinates
         x = next_x
         y = next_y
-        # Dig the corner points!
-        self.digPoints(self.land, next_cornerpoints)
-        # See whether we want a room or not
-        if not room_made and self.roomWanted(self.land):
-          room_made = True
-          room_points = self.getRoomPoints(room_size)
-          self.digPoints(self.land, self.translateRoomPoints(room_points, x, y))
+        # Dig the points!
+        self.digPoints(self.land, next_points)
     # Return the finished land mass with added caves
     return self
 
-  def cornerPointsInBounds(self, corner_points):
-    return (self.pointInBounds(*corner_points[0]) and
-           self.pointInBounds(*corner_points[1]) and
-           self.pointInBounds(*corner_points[2]) and
-           self.pointInBounds(*corner_points[3]))
+  def pointsInBounds(self, points):
+    for point in points:
+      if not self.pointInBounds(*point):
+        return False
+    return True
 
   def digPoints(self, land, points):
     for point in points:
@@ -94,6 +90,9 @@ class CaveGenerator:
       for mody in (-0.5, 0.5):
         points.insert(0, (int(round(x + modx)), int(round(y + mody))))
     return points
+
+  def getPathPoints(self, x, y, radius):
+    return self.translateRoomPoints(self.getRoomPoints(radius), x, y)
 
   def translateRoomPoints(self, points, x, y):
     result_points = []
@@ -160,26 +159,6 @@ class CaveGenerator:
       solidity += layer.count(True)
     return float(solidity) / float(self.area)
 
-  def roomWanted(self, land, percent=75):
-    # This returns True or False
-    # True = Make a room
-    # First the land needs to be over percent% solid
-    solidity = self.getLandSolidity()
-    if solidity > (float(percent) / 100.0):
-      # Now that we know a room could "fit", we need to randomly decide
-      if random.randint(0, (self.getLengthOfWalk() * 2) - 1) == 0:
-        return True
-      else:
-        return False
-    else:
-      return False
-
-  def getRoomSize(self):
-    # This should really just be a static number if the path width is static
-    # If the walk path ever excavates more than 1 around it, change this to an equation
-    #return int(round( math.sqrt(self.area) / 10.0 ))
-    return 9
-
   def getLengthOfWalk(self):
     # The length of the cave is equal to the percentage of solid mass applied
     # to the square root of the area then divided by 2
@@ -196,5 +175,7 @@ class CaveGenerator:
 
 
 ## --Debug script--
-#cave_generator = CaveGenerator(width=160, height=62, angle_deviation=60, caves_percent=100)
-#print cave_generator.generateCave()
+#cave_gen = CaveGenerator(width=160, height=62, angle_deviation=60, caves_percent=100)
+#print cave_gen.generateCave()
+#print cave_gen.getCornerPoints(4, 5)
+#print cave_gen.getPathPoints(4, 5, 3) # Default radius is 3!!!
