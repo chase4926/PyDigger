@@ -26,6 +26,11 @@ class CaveGenerator:
       string += "\n"
     return string
 
+  def save(self, filename):
+    f = open(filename, 'w+')
+    f.write(str(self))
+    f.close()
+
   def generateCave(self, x_range=None, y_range=None):
     # Determine amount of caves to carve
     caves = self.getAmountOfCaves()
@@ -125,18 +130,16 @@ class CaveGenerator:
       land.append(self.width * [fill])
     return land
 
-  def fillInEdges(self, land):
+  def fillInEdges(self):
     # Makes the edges of land solid
-    height = len(land)
-    width = len(land[0])
-    for y in range(height):
-      if y == 0 or y == height - 1:
-        for x in range(width):
-          land[y][x] = True
+    for y in range(self.height):
+      if y == 0 or y == self.height - 1:
+        for x in range(self.width):
+          self.land[y][x] = True
       else:
-        land[y][0] = True
-        land[y][width-1] = True
-    return land
+        self.land[y][0] = True
+        self.land[y][self.width-1] = True
+    return self.land
 
   def getRandomPoint(self, x_range=None, y_range=None):
     # Returns a random point in land
