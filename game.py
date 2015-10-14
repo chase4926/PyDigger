@@ -16,8 +16,11 @@ import pygame
 from pygame.locals import *
 # Local imports
 import cave_generator as cgen
+import lib_medialoader as media
 import gameclock
 
+# Load images
+media.load_images("./images")
 
 # Seed with the current time
 seed = time.strftime("%y%m%d%H%M%S")
@@ -92,7 +95,7 @@ class Terrain:
     self.tile_size = 16
     self.regenerateCave()
     self.cave_surface = pygame.Surface((self.width*self.tile_size, self.height*self.tile_size))
-    self.dirt_image = pygame.image.load("./images/dirt.png") # Move this somewhere else later
+    self.dirt_image = media.get("./images/dirt.png")
     self.redrawCaveSurface()
 
   def pan(self, x_offset=0, y_offset=0):
