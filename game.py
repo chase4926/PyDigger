@@ -27,7 +27,7 @@ random.seed(seed)
 pygame.init()
 
 # Various varibles
-FPS = 10 # 0 = Unlimited
+FPS = 60 # 0 = Unlimited
 WIDTH = 1280
 HEIGHT = 720
 FULLSCREEN = False
@@ -41,10 +41,13 @@ class GameWindow:
       flags = flags | pygame.FULLSCREEN
     self.displaysurf = pygame.display.set_mode((WIDTH, HEIGHT), flags)
     pygame.display.set_caption("PyDigger")
-    self.clock = gameclock.GameClock(60, FPS, update_callback=self.update, frame_callback=self.draw)
+    self.clock = gameclock.GameClock(ticks_per_second=60,
+                                     max_fps=FPS,
+                                     update_callback=self.update,
+                                     frame_callback=self.draw,
+                                     use_wait=False)
     # Test
     self.terrain = Terrain()
-    self.tick = 0
 
   def blit(self, surface, coords):
     self.displaysurf.blit(surface, coords)
@@ -54,21 +57,14 @@ class GameWindow:
     
     while self.running:
       self.clock.tick()
-      #if self.clock.update_ready:
-        #self.update()
-      #if self.clock.frame_ready:
-        #self.draw()
-      # "Flip" the display
-      pygame.display.update()
 
   def update(self, args):
-    self.tick += 1
     # Key is down (Holding down a key will keep triggering)
     keys_pressed = pygame.key.get_pressed()
     if keys_pressed[pygame.K_DOWN]:
-      self.terrain.pan(y_offset=1)
+      self.terrain.pan(y_offset=4)
     if keys_pressed[pygame.K_UP]:
-      self.terrain.pan(y_offset=-1)
+      self.terrain.pan(y_offset=-4)
     # Key presses (Holding down a key will only trigger once)
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -82,6 +78,8 @@ class GameWindow:
     self.displaysurf.fill((0,0,0))
     # Now all the draws:
     self.terrain.draw(self)
+    # "Flip" the display
+    pygame.display.update()
 
 
 class Terrain:
@@ -124,7 +122,6 @@ class Terrain:
       self.cave_gen.caves_percent = percents[i]
       self.cave_gen.generateCave(y_range=(ranges[i+1], ranges[i]))
     self.cave_gen.fillInEdges()
-    self.cave_gen.save("./cave.txt")
 
   def draw(self, window):
     window.blit(self.cave_surface, (-self.x, -self.y))
@@ -134,6 +131,4 @@ window = GameWindow()
 window.main()
 # Deconstruct all pygame stuff
 pygame.quit()
-
-print window.tick
 
