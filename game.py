@@ -44,7 +44,7 @@ class GameWindow:
       flags = flags | pygame.FULLSCREEN
     self.displaysurf = pygame.display.set_mode((WIDTH, HEIGHT), flags)
     pygame.display.set_caption("PyDigger")
-    self.clock = gameclock.GameClock(ticks_per_second=60,
+    self.clock = gameclock.GameClock(max_ups=60,
                                      max_fps=FPS,
                                      update_callback=self.update,
                                      frame_callback=self.draw,

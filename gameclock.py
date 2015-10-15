@@ -1,487 +1,517 @@
 #!/usr/bin/env python
- 
-__version__ = '$Id: gameclock.py 294 2011-05-12 03:55:32Z$'
-__author__ = 'Gummbum, (c) 2011'
- 
- 
+
+# This file is part of GameClock.
+#
+# GameClock is free software: you can redistribute it and/or modify it
+# under the terms of the GNU Lesser General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# GameClock is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with GameClock.  If not, see <http://www.gnu.org/licenses/>.
+
+# Compatible: Python 2.7, Python 3.2
+
 """gameclock.py - Game clock for Gummworld2.
- 
+
+GameClock is a fixed time-step clock that keeps time in terms of game
+time. It will attempt to keep game time close to real time, so if an
+interval takes one second of game time then the user experiences one
+second of real time. In the worst case where the CPU cannot keep up with
+the game load, game time will subjectively take longer but still remain
+accurate enough to keep game elements in synchronization.
+
 GameClock manages time in the following ways:
-    
-  1.  Run game engine at a constant speed, independent of variable frame rate.
-  2.  Register special callback functions that will be run when the
-    update_ready and frame_ready conditions occur. (Directly polling the
-    clock is a supported alternate method.)
-  3.  Schedule callback items to coincide with tick(), update_ready,
-    frame_ready, and elapsed intervals.
-  4.  Employ on-demand time dilation.
-  5.  Gracefully handles some worst cases.
- 
-Note that Python Library docs mention that time functions do not return
-fractions of a second on all computer platforms. Therefore this module will not
+        
+    1.  Register special callback functions that will be run when they
+        are due.
+    2.  Schedule game logic updates at a constant speed, independent of
+        frame rate.
+    3.  Schedule frames at capped frames-per-second, or uncapped.
+    4.  Invoke a pre-emptive pause callback when paused.
+    5.  Schedule miscellaneous items at user-configurable intervals.
+    6.  Optionally sleep between schedules to conserve CPU cycles.
+    7.  Gracefully handle corner cases.
+
+Note the Python Library docs mention that not all computer platforms'
+time functions return time in fractions of a second. This module will not
 work on such platforms.
- 
-* * *  IMPORTANT  * * *
- 
-On the note of granularity, some time sources are far less than ideal. This
-module uses the logic: if (windows|cygwin) use time.clock, else use time.time.
-For non-Windows systems using pygame is HIGHLY recommended to use
-pygame.time.get_ticks for its greatly superior granularity. You can do this like
-so:
-  
-  if sys.platform in('win32','cygwin'):
-    time_source = None
-  else:
-    time_source = lambda:pygame.time.get_ticks()/1000.
-  clock = gameclock.GameClock(time_source=time_source)
- 
+
 USAGE
- 
-Old-style direct polling:
-  
-  clock = GameClock()
-  while 1:
-    clock.tick()
-    if clock.update_ready:
-      update()
-    if clock.frame_ready:
-      draw()
- 
-Special callback:
-  
-  clock = GameClock(update_callback=update, frame_callback=draw)
-  while 1:
-    clock.tick()
- 
+
+Callback:
+    
+    clock = GameClock(
+        update_callback=update_world,
+        frame_callback=draw_scene,
+        pause_callback=pause_game)
+    while 1:
+        clock.tick()
+
 Special callbacks can be directly set and cleared at any time:
-  
-  clock.update_callback = my_new_update
-  clock.frame_callback = my_new_draw
-  
-  clock.update_callback = None
-  clock.frame_callback = None
- 
+    
+    clock.update_callback = my_new_update
+    clock.frame_callback = my_new_draw
+    clock.pause_callback = my_new_pause
+    
+    clock.update_callback = None
+    clock.frame_callback = None
+    clock.pause_callback = None
+
 Scheduling miscellanous callbacks:
-  
-  def my_tick_spammer(dt, secs, message=None):
-    print 'secs=%f dt=%f message=%s' % (secs,dt,message)
-  clock.schedule(my_tick_spammer, lambda:time.time(), message='Hello again!')
- 
-  def update_something(dt):
-    "..."
-  clock.schedule_update(coincide_with_update)
-  
-  def coincide_with_draw(dt):
-    "..."
-  clock.schedule_frame(coincide_with_draw)
-  
-  def every_second_of_every_day(dt):
-    "..."
-  clock.schedule_interval(every_second_of_every_day, 1.0)
- 
-Time dilation (affects DT and interval timers):
-  
-  normal = 1.0
-  slow_mo = 2.0
-  fast_mo = 0.5
-  clock.dilation = slow_mo
-  clock.dilation = normal
- 
+    
+    def every_second_of_every_day(dt):
+        "..."
+    clock.schedule_interval(every_second_of_every_day, 1.0)
+
+Callbacks can be any kind of callable that accepts the callback signature.
+
+The update_callback receives a single DT argument, which is the time-step
+in seconds since the last update.
+
+The frame_callback receives a single INTERPOLATION argument, which is the
+fractional position in time of the frame within the current update time-
+step. It is a float in the range 0.0 to 1.0.
+
+The pause_callback receives no arguments.
+
+User-defined interval callbacks accept at least a DT argument, which is
+the scheduled item's interval, and optional user-defined arguments. See
+GameClock.schedule_interval.
+
+DEPRECATIONS
+
+Old Style Game Loop
+
+Use of the old style game loop is deprecated. Don't do this anymore:
+    
+    if clock.update_ready:
+        update(clock.dt_update)
+    if clock.frame_ready:
+        draw(clock.interpolate)
+
+The old style game loop will work on sufficiently fast hardware. Timekeeping
+will break on slow hardware that cannot keep up with a heavy workload. This is
+because the old style ignores the cost of the frame routine. By using callbacks
+instead, cost is factored into the frame scheduling and overloading the CPU has
+fewer negative side effects.
+
+The update_ready and frame_ready public attributes have been removed.
+
 CREDITS
- 
+
 The inspiration for this module came from Koen Witters's superb article
-"deWiTTERS Game Loop", aka "Constant Game Speed independent of Variable FPS" at
-http://www.koonsolo.com/news/dewitters-gameloop/.
- 
-Pythonated by Gummbum. While the builtin demo requires pygame, the module does
-not. The GameClock class is purely Python and should be compatible with other
-Python-based multi-media and game development libraries.
+"deWiTTERS Game Loop", aka "Constant Game Speed independent of Variable FPS"
+at http://www.koonsolo.com/news/dewitters-gameloop/.
+
+The clock was changed to use a fixed time-step after many discussions with
+DR0ID, and a few readings of
+http://gafferongames.com/game-physics/fix-your-timestep/.
+
+Thanks to Koen Witters, DR0ID, and Glenn Fiedler for sharing.
+
+Pythonated by Gummbum. While the builtin demo requires pygame, the module
+does not. The GameClock class is purely Python and should be compatible with
+other Python-based multi-media and game development libraries.
 """
- 
-import sys
+
+__version__ = '$Id: gameclock.py 428 2013-08-28 05:43:47Z stabbingfinger@gmail.com $'
+__author__ = 'Gummbum, (c) 2011-2014'
+
+
+__all__ = ['GameClock']
+
+
+import functools
 import time
- 
-class _Item(object):
-  """A spammy item runs all the time."""
-  __slots__ = ['func', 'pri', 'args', 'kwargs']
-  def __init__(self, func, pri, args, kwargs):
-    self.func = func
-    self.pri = pri
-    self.args = args
-    self.kwargs = kwargs
- 
+
+
 class _IntervalItem(object):
-  """An interval item runs after an elapsed interval."""
-  __slots__ = ['func', 'interval', 'lasttime', 'args', 'kwargs']
-  def __init__(self, func, interval, curtime, args, kwargs):
-    self.func = func
-    self.interval = float(interval)
-    self.lasttime = curtime
-    self.args = args
-    self.kwargs = kwargs
-  def sort_key(self):
-    return self.lasttime+self.interval
- 
+    """An interval item runs after an elapsed interval."""
+    # __slots__ = ['func', 'interval', 'lasttime', 'life', 'args', 'id']
+    id = 0
+
+    def __init__(self, func, interval, curtime, life, args):
+        self.func = func
+        self.interval = float(interval)
+        self.lasttime = curtime
+        self.life = life
+        self.args = args
+        self.id = _IntervalItem.id
+        _IntervalItem.id += 1
+
+
 class GameClock(object):
-  """Manage time in the following ways:
     
-  1. Run game engine at a constant speed, independent of variable frame rate.
-  2. Schedule items to coincide with tick(), update_ready, frame_ready, and
-     elapsed intervals.
-  3. Employ on-demand time dilation.
-  
-  Parameters:
-    ticks_per_second -> Positive integer. Constant ticks per second for
-      game physics.
-    max_fps -> Positive integer. Max frames allowed per second. A value of
-      zero allows unlimited frames.
-    use_wait -> Boolean. When True, GameClock.tick() uses time.sleep to
-      throttle frames per second. This uses less CPU at the postential
-      cost of smoothness. When False, GameClock.tick() returns without
-      injecting any waits, and can result in smoother frames.
-    max_frame_skip -> Positive integer. Max game ticks allowed before
-      forcing a frame display.
-    update_callback -> Callable. Special callback to invoke when update is
-      ready.
-    frame_callback -> Callable. Special callback to invoke when frame is
-      ready.
-    time_source -> Callable. Custom time source, e.g.
-      lambda:pygame.time.get_ticks() / 1000.0.
-  Properties:
-    interpolate -> Read-only. Float (range 0 to 1) factor representing the
-      exact point in time between the previous and next ticks.
-    update_ready -> Read-only. Boolean indicating it is time to update the
-      game logic.
-    frame_ready -> Read-only. Boolean indicating it is time to update the
-      display.
-    dilation -> Read-write. Set the time dilation factor. Normal==1.0,
-      Slower>1.0, Faster<1.0. Affects DT and interval timers.
-    update_callback -> Read-write. The callback function to invoke at each
-      update_ready interval.
-    frame_callback -> Read-write. The callback function to invoke at each
-      frame_ready interval.
-    fps, frame_count, frame_elapsed -> Read-only. Most recent FPS,
-      cumulative frames posted during the current second, and time elapsed
-      in the previous frame, respectively.
-    ups, update_count, update_elapsed -> Read-only. Most recent updates per
-      second, cumulative updates posted during the current second, and
-      time elapsed in the previous update, respectively.
-    tps -> Read-only. Most recently measured tick() calls per second.
-    time -> Read-write. The value from the last poll of time source.
-    ticks_per_second -> Read-write. See parameter ticks_per_second.
-    max_fps -> Read-write. See parameter max_fps.
-    use_wait -> Read-write. See parameter use_wait.
-    max_frame_skip -> Read-write. See parameter max_frame_skip.
-  Methods:
-    tick() -> Game loop timer. Call once per game loop.
-    get_time() -> Return the milliseconds elapsed in the previous call to tick().
-    get_fps() -> Return the frame rate from the previous second.
-    get_ups() -> Return the update rate from the previous second.
-    schedule(), schedule_update(), schedule_update_priority(),
-      schedule_frame(), schedule_frame_priority(),
-      schedule_interval() -> Various scheduling facilities.
-    unschedule() -> Schedule removal.
-  """
-  
-  def __init__(self,
-    ticks_per_second=25, max_fps=0, use_wait=True, max_frame_skip=5,
-    update_callback=None, frame_callback=None, time_source=None,
-  ):
-    # time sources
-    self._wait = time.sleep
-    if time_source is not None:
-      self._get_ticks = time_source
-    elif sys.platform in ('win32','cygwin'):
-      self._get_ticks = time.clock
-    else:
-      self._get_ticks = time.time
-    
-    # settings
-    self.ticks_per_second = ticks_per_second
-    self.max_fps = max_fps
-    self.use_wait = use_wait
-    self.max_frame_skip = max_frame_skip
-    self.update_callback = update_callback
-    self.frame_callback = frame_callback
-    self.dilation = 1.0
-    
-    # counters
-    self._elapsed = 0.0
-    self._update_elapsed = 0.0
-    self._frame_elapsed = 0.0
-    self.frame_count = 0
-    self.update_count = 0
-    self._frames_skipped = 0
-    self.time = self._get_ticks()
-    self._last_update = self.time
-    self._last_frame = self.time
-    
-    # schedules: trigger once per call to tick()
-    # interval schedules: trigger on elapsed time
-    # update schedules: trigger on update_ready
-    # frames schedules: trigger on frame_ready
-    self.schedules = []
-    self.interval_schedules = []
-    self.update_schedules = []
-    self.frame_schedules = []
-    self._need_sort = False  # for interval schedules only
-    
-    # stats
-    self.tps = 0.0    # calls to tick() per second
-    self.fps = 0.0    # frames per second
-    self.ups = 0.0    # updates per second
-    self.update_elapsed = 0.0
-    self.frame_elapsed = 0.0
-    self.update_ready = True
-    self.frame_ready = True
-    
-  @property
-  def ticks_per_second(self):
-    """Get or set ticks per second."""
-    return self._ticks_per_second
-  @ticks_per_second.setter
-  def ticks_per_second(self, n):
-    if n > 0:
-      self._ticks_per_second = n
-    else:
-      self._ticks_per_second = 25
-    self._tick_step = 1.0 / self._ticks_per_second
-  
-  @property
-  def max_fps(self):
-    """Get or set max_fps."""
-    return self._max_fps
-  @max_fps.setter
-  def max_fps(self, n):
-    if n > 0:
-      self._max_fps = n
-      self._frame_step = 1.0 / n
-    else:
-      self._max_fps = 0
-      self._frame_step = 0
-  
-  @property
-  def use_wait(self):
-    """Get or set use_wait."""
-    return self._use_wait
-  @use_wait.setter
-  def use_wait(self, enabled):
-    self._use_wait = enabled
-    self._tps = float(self.max_fps)
- 
-  @property
-  def max_frame_skip(self):
-    """Get or set max_frame_skip."""
-    return self._max_frame_skip
-  @max_frame_skip.setter
-  def max_frame_skip(self, n):
-    if n > 0:
-      self._max_frame_skip = n
-    else:
-      self._max_frame_skip = 0
-  
-  def tick(self):
-    """Game loop timer. Call once per game loop to calculate runtime values.
-    After calling, check the update_ready() and frame_ready() methods.
-    Sleep cycles are injected if use_wait=True. Returns the number of
-    milliseconds that have elapsed since the last call to tick()."""
-    
-    TIME = self._get_ticks()
-    DT = self._ticks = (TIME - self.time) / self.dilation
-    self._elapsed += self._ticks
-    self.time = TIME
-    
-    # Update runtime stats and counters every second.
-    if self._elapsed >= 1.0:
-      self._elapsed %= 1.0
-      # Save stats and clear counters.
-      self.tps = 0.0
-      self.fps = self.frame_count
-      self.ups = self.update_count
-      self.frame_count = self.update_count = 0
-    
-    # Process the time slice.
-    self._tps += 1
-    self._update_elapsed += DT
-    self._frame_elapsed += DT
-    self.update_ready = self.frame_ready = False
-    
-    if TIME >= self._last_update+self._tick_step*self.dilation:
-      self.update_ready = True
-    
-    if self.max_fps == 0:
-      self.frame_ready = True
-    elif TIME >= self._last_frame+self._frame_step or \
-      self._frames_skipped >= self.max_frame_skip:
-      self.frame_ready = True
-    elif self._use_wait and self.max_fps > 0:
-      wait_sec = self._last_frame + self._frame_step - self._get_ticks()
-      if wait_sec > 0.:
-        self._wait(wait_sec)
-      self.frame_ready = True
-    
-    # Schedules cycled every tick.
-    for sched in self.schedules:
-      sched.func(DT, *sched.args, **sched.kwargs)
-    
-    # Schedules cycled when their interval elapses.
-    if self._need_sort:
-      self.interval_schedules.sort(key=_IntervalItem.sort_key)
-    self.need_sort = False
-    for sched in self.interval_schedules:
-      due = sched.lasttime + sched.interval*self.dilation
-      if TIME >= due:
-        drift = TIME - due
-        if -0.5 < drift < 0.5:
-          dt = sched.interval
-        else:
-          dt = TIME - sched.lasttime
-        sched.func(dt/self.dilation, *sched.args, **sched.kwargs)
-        sched.lasttime += dt * self.dilation
-        self._need_sort = True
-      else:
-        break
-    
-    # Schedules cycled every update.
-    if self.update_ready:
-      # Flip the state variables.
-      self.update_count += 1
-      self._frames_skipped += 1
-      self.update_elapsed = self._update_elapsed
-      self._update_elapsed = 0.0
-      # Reconcile if we're way too fast or slow.
-      self._last_update += self._tick_step
-      drift = self._tick_step / 5.0
-      if not (TIME-drift < self._last_update < TIME+drift):
+    def __init__(self, max_ups=30, max_fps=0, use_wait=False, time_source=time.time, update_callback=None,
+                 frame_callback=None, paused_callback=None):
+        
+        # Configurables.
+        self.get_ticks = time_source
+        self.max_ups = max_ups
+        self.max_fps = max_fps
+        self.use_wait = use_wait
+        self.update_callback = update_callback
+        self.frame_callback = frame_callback
+        self.paused_callback = paused_callback
+        
+        # Time keeping.
+        TIME = self.get_ticks()
+        self._real_time = TIME
+        self._game_time = TIME
         self._last_update = TIME
-      # Run the schedules.
-      update_called = self.update_callback is None
-      for sched in self.update_schedules:
-        if update_called:
-          sched.func(self.update_elapsed, *sched.args, **sched.kwargs)
-        else:
-          if sched.pri > 0.0:
-            self.update_callback(self.update_elapsed)
-            update_called = True
-          sched.func(self.update_elapsed, *sched.args, **sched.kwargs)
-      if not update_called:
-        self.update_callback(self.update_elapsed)
+        self._last_update_real = TIME
+        self._next_update = TIME
+        self._last_frame = TIME
+        self._next_frame = TIME
+        self._next_second = TIME
+        self._update_ready = False
+        self._frame_ready = False
+        self._paused = 0
+        
+        # Schedules
+        self._need_sort = False
+        self._schedules = []
+        self._unschedules = []
+        
+        # Metrics: update and frame progress counter in the current one-second
+        # interval.
+        self.num_updates = 0
+        self.num_frames = 0
+        # Metrics: duration in seconds of the previous update and frame.
+        self.dt_update = 0.0
+        self.dt_frame = 0.0
+        # Metrics: how much real time a callback consumes
+        self.cost_of_update = 0.0
+        self.cost_of_frame = 0.0
+        # Metrics: average updates and frames per second over the last five
+        # seconds.
+        self.ups = 0.0
+        self.fps = 0.0
     
-    # Schedules cycled every frame.
-    if self.frame_ready:
-      # Flip the state variables.
-      self.frame_count += 1
-      self._frames_skipped = 0
-      self.frame_elapsed = self._frame_elapsed
-      self._frame_elapsed = 0.0
-      # Reconcile if we're way too fast or slow.
-      if self._frame_step:
-        self._last_frame += self._frame_step
-        drift = self._frame_step * self.max_frame_skip
-        if not (TIME-drift < self._last_frame < TIME+drift):
-          self._last_frame = TIME
-      # Run the schedules.
-      frame_called = self.frame_callback is None
-      for sched in self.frame_schedules:
-        if frame_called:
-          sched.func(self.frame_elapsed, *sched.args, **sched.kwargs)
-        else:
-          if sched.pri > 0.0:
-            self.frame_callback(self.frame_elapsed)
-            frame_called = True
-          sched.func(self.frame_elapsed, *sched.args, **sched.kwargs)
-      if not frame_called:
-        self.frame_callback(self.frame_elapsed)
+    @property
+    def max_ups(self):
+        return self._max_ups
+
+    @max_ups.setter
+    def max_ups(self, val):
+        self._max_ups = val
+        self._update_interval = 1.0 / val
     
-    return DT
-  
-  @property
-  def interpolate(self):
-    """Return a float representing the current position in between the
-    previous gametick and the next one. This allows the main game loop to
-    make predictive calculations between gameticks."""
-    interp = (
-      self._get_ticks() - self._last_update
-    ) / self._tick_step / self.dilation
-    if interp > 1.0:
-      interp = 1.0
-    return interp
-  
-  def get_time(self):
-    """Return the milliseconds elapsed in the previous call to tick()."""
-    return self._ticks
- 
-  def get_fps(self):
-    """Return frames per second during the previous second."""
-    return self.fps
-  
-  def get_ups(self):
-    """Return updates per second during the previous second."""
-    return self.ups
- 
-  def schedule(self, func, *args, **kwargs):
-    """Schedule an item to be called back each time tick() is called."""
-    self.unschedule(func)
-    item = _Item(func, 0, args, kwargs)
-    self.schedules.append(item)
- 
-  def schedule_update(self, func, *args, **kwargs):
-    """Schedule an item to be called back each time update_ready is True."""
-    self.unschedule(func)
-    item = _Item(func, -1, args, kwargs)
-    self.update_schedules.append(item)
-  
-  def schedule_update_priority(self, func, pri, *args, **kwargs):
-    """Schedule an item to be called back each time update_ready is True.
+    @property
+    def max_fps(self):
+        return self._max_fps
+
+    @max_fps.setter
+    def max_fps(self, val):
+        self._max_fps = val
+        self._frame_interval = 1.0 / val if val > 0 else 0
     
-    Items are called in order of priority, low to high. If the clock's
-    update_callback is not None, its priority is always 0.0.
-    """
-    self.unschedule(func)
-    new_item = _Item(func, pri, args, kwargs)
-    for i,sched in enumerate(self.update_schedules):
-      if sched.pri > new_item.pri:
-        self.update_schedules.insert(i, new_item)
-        return
-    self.update_schedules.append(new_item)
- 
-  def schedule_frame(self, func, *args, **kwargs):
-    """Schedule an item to be called back each time frame_ready is True."""
-    self.unschedule(func)
-    item = _Item(func, 0.0, args, kwargs)
-    self.frame_schedules.append(item)
-  
-  def schedule_frame_priority(self, func, pri, *args, **kwargs):
-    """Schedule an item to be called back each time frame_ready is True.
+    @property
+    def game_time(self):
+        """Virtual elapsed time in game milliseconds.
+        """
+        return self._game_time
+
+    @property
+    def paused(self):
+        """The real time at which the clock was paused, or zero if the clock
+        is not paused.
+        """
+        return self._paused
     
-    Items are called in order of priority, low to high. If the clock's
-    frame_callback is not None, its priority is always 0.0.
-    """
-    self.unschedule(func)
-    new_item = _Item(func, pri, args, kwargs)
-    for i,sched in enumerate(self.frame_schedules):
-      if sched.pri > new_item.pri:
-        self.frame_schedules.insert(i, new_item)
-        return
-    self.frame_schedules.append(new_item)
- 
-  def schedule_interval(self, func, interval, *args, **kwargs):
-    """Schedule an item to be called back each time an interval elapses.
+    @property
+    def interpolate(self):
+        interp = (self._real_time - self._last_update_real) / self._update_interval
+        # FIXED: this was getting huge negative value when window focus is gained. Need
+        # to protect against this corner case.
+        # return interp if interp <= 1.0 else 1.0
+        if interp < 0.0:
+            return 0.0
+        if interp > 1.0:
+            return 1.0
+        return interp
     
-    Parameters:
-      interval -> The time in seconds (float).
-    """
-    self.unschedule(func)
-    item = _IntervalItem(func, interval, self._get_ticks(), args, kwargs)
-    self.interval_schedules.append(item)
-    self._need_sort = True
-  
-  def unschedule(self, func):
-    """Unschedule a managed function."""
-    for sched in (
-      self.schedules, self.update_schedules, self.frame_schedules,
-      self.interval_schedules,
-    ):
-      for item in list(sched):
-        if item.func == func:
-          sched.remove(item)
+    def tick(self):
+        # Now.
+        real_time = self.get_ticks()
+        self._real_time = real_time
+        
+        # Pre-emptive pause callback.
+        if self._paused:
+            if self.paused_callback:
+                self.paused_callback()
+            return
+        
+        # Check if update and frame are due.
+        update_interval = self._update_interval
+        game_time = self._game_time
+        if real_time >= self._next_update:
+            ## FIX: Commented code is a variable timestep. Very bad on underpowered CPUs,
+            ## and generally prone to "losing time".
+            ## self.dt_update = real_time - self._last_update_real
+            self.dt_update = update_interval  # fixed timestep: good
+            self._last_update_real = real_time
+            game_time += update_interval
+            self._game_time = game_time
+            self._last_update = game_time
+            self._next_update = real_time + update_interval
+            self.num_updates += 1
+            if self.update_callback:
+                self._update_ready = True
+        if real_time - self._last_frame >= self._update_interval or (
+                real_time + self.cost_of_frame < self._next_update and
+                real_time >= self._next_frame):
+            self.dt_frame = real_time - self._last_frame
+            self._last_frame = real_time
+            self._next_frame = real_time + self._frame_interval
+            self.num_frames += 1
+            if self.frame_callback:
+                self._frame_ready = True
+
+        # Check if a schedule is due, and when.
+        sched_ready = False
+        sched_due = 0
+        if self._schedules:
+            sched = self._schedules[0]
+            sched_due = sched.lasttime + sched.interval
+            if real_time >= sched_due:
+                sched_ready = True
+        
+        # Run schedules if any are due.
+        if self._update_ready or sched_ready:
+            self._run_schedules()
+        
+        # Run the frame callback (moved inline to reduce function calls).
+        if self.frame_callback and self._frame_ready:
+            get_ticks = self.get_ticks
+            t = get_ticks()
+            self.frame_callback(self.interpolate)
+            self.cost_of_frame = get_ticks() - t
+            self._frame_ready = False
+        
+        # Flip metrics counters every second.
+        if real_time >= self._next_second:
+            self._flip(real_time)
+        
+        # Sleep to save CPU.
+        if self.use_wait:
+            upcoming_events = [
+                self._next_frame,
+                self._next_update,
+                self._next_second,
+            ]
+            if sched_due != 0:
+                upcoming_events.append(sched_due)
+            next_due = functools.reduce(min, upcoming_events)
+            t = self.get_ticks()
+            time_to_sleep = next_due - t
+            if time_to_sleep >= 0.002:
+                time.sleep(time_to_sleep)
+        
+    def pause(self):
+        """Pause the clock so that time does not elapse.
+        
+        While the clock is paused, no schedules will fire and tick() returns
+        immediately without progressing internal counters. Game loops that
+        completely rely on the clock will need to take over timekeeping and
+        handling events; otherwise, the game will appear to deadlock. There are
+        many ways to solve this scenario. For instance, another clock can be
+        created and used temporarily, and the original swapped back in and
+        resumed when needed.
+        """
+        self._paused = self.get_ticks()
+    
+    def resume(self):
+        """Resume the clock from the point that it was paused."""
+        real_time = self.get_ticks()
+        paused = self._paused
+        for item in self._schedules:
+            dt = paused - item.lasttime
+            item.lasttime = real_time - dt
+        self._last_update_real = real_time - (paused - self._last_update_real)
+        self._paused = 0
+        self._real_time = real_time
+    
+    def schedule_interval(self, func, interval, life=0, args=[]):
+        """Schedule an item to be called back each time an interval elapses.
+        
+        While the clock is paused time does not pass.
+        
+        Parameters:
+            func -> The callback function.
+            interval -> The time in seconds (float) between calls.
+            life -> The number of times the callback will fire, after which the
+                schedule will be removed. If the value 0 is specified, the event
+                will persist until manually unscheduled.
+            args -> A list that will be passed to the callback as an unpacked
+                sequence, like so: item.func(*[item.interval]+item.args).
+            
+        """
+        # self.unschedule(func)
+        item = _IntervalItem(
+            func, interval, self.get_ticks(), life, [interval] + list(args))
+        self._schedules.append(item)
+        self._need_sort = True
+        return item.id
+    
+    def unschedule(self, func):
+        """Unschedule managed functions. All matching items are removed."""
+        sched = self._schedules
+        for item in list(sched):
+            if item.func == func:
+                sched.remove(item)
+
+    def unschedule_by_id(self, id):
+        """Unschedule a single managed function by the unique ID that is
+        returned by schedule_interval().
+        """
+        sched = self._schedules
+        for item in list(sched):
+            if item.id == id:
+                sched.remove(item)                
+
+    @staticmethod
+    def _interval_item_sort_key(item):
+        return item.lasttime + item.interval
+    
+    def _run_schedules(self):
+        get_ticks = self.get_ticks
+        
+        # Run the update callback.
+        if self.update_callback and self._update_ready:
+            t = get_ticks()
+            self.update_callback(self.dt_update)
+            self.cost_of_update = get_ticks() - t
+            self._update_ready = False
+        
+        # Run the interval callbacks.
+        if self._need_sort:
+            self._schedules.sort(key=self._interval_item_sort_key)
+            self._need_sort = False
+        real_time = self._real_time
+        for sched in self._schedules:
+            interval = sched.interval
+            due = sched.lasttime + interval
+            if real_time >= due:
+                sched.func(*sched.args)
+                sched.lasttime += interval
+                need_sort = True
+                if sched.life > 0:
+                    if sched.life == 1:
+                        self._unschedules.append(sched.id)
+                        need_sort = False
+                    else:
+                        sched.life -= 1
+                if need_sort:
+                    self._need_sort = True
+            else:
+                break
+        if self._unschedules:
+            for id in self._unschedules:
+                self.unschedule_by_id(id)
+            del self._unschedules[:]
+    
+    def _flip(self, real_time):
+        self.ups = self.num_updates
+        self.fps = self.num_frames
+        
+        self.num_updates = 0
+        self.num_frames = 0
+        
+        self._last_second = real_time
+        self._next_second += 1.0
+
+
+if __name__ == '__main__':
+    import pygame
+    from pygame.locals import *
+    
+    class Game(object):
+        
+        def __init__(self):
+            pygame.init()
+            self.screen = pygame.display.set_mode((640, 480))
+            self.screen_rect = self.screen.get_rect()
+            self.black = Color('black')
+            self.clock = GameClock(max_ups=30, max_fps=256, update_callback=self._update, frame_callback=self._draw)
+            self.clock.schedule_interval(self._update_caption, 1.0)
+            
+            ball = pygame.sprite.Sprite()
+            ball.image = pygame.Surface((20, 20))
+            ball.rect = ball.image.get_rect()
+            pygame.draw.rect(ball.image, Color('white'), ball.rect, 1)
+            ball.rect.center = self.screen_rect.center
+            ball.pos = float(ball.rect.centerx), float(ball.rect.centery)
+            ball.vec = 3, 5
+            self.ball = ball
+            
+            self.cfg_draw_simple = False
+        
+        def run(self):
+            while 1:
+                self.clock.tick()
+        
+        def _update(self, dt):
+            self._do_events()
+            
+            ball = self.ball
+            screen_rect = self.screen_rect
+            
+            x, y = ball.pos
+            vx, vy = ball.vec
+            x += vx
+            y += vy
+            ball.rect.centerx = round(x)
+            ball.rect.centery = round(y)
+            ball.pos = x, y
+            if not screen_rect.contains(ball.rect):
+                if ball.rect.right > screen_rect.right:
+                    vx *= -1
+                elif ball.rect.left < screen_rect.left:
+                    vx *= -1
+                if ball.rect.bottom > screen_rect.bottom:
+                    vy *= -1
+                elif ball.rect.top < screen_rect.top:
+                    vy *= -1
+                ball.vec = vx, vy
+        
+        def _update_caption(self, *args):
+            pygame.display.set_caption('{0} ups | {1} fps | {2}'.format(
+                self.clock.ups, self.clock.fps,
+                'Draw SIMPLE' if self.cfg_draw_simple else 'Draw COMPLEX'))
+        
+        def _draw(self, interp):
+            ball = self.ball
+            screen = self.screen
+            black = self.black
+            
+            screen.fill(black)
+            
+            x, y = ball.rect.topleft
+            vx, vy = ball.vec
+            x1 = int(round(ball.rect.x - vx) + (vx * interp))
+            y1 = int(round(ball.rect.y - vy) + (vy * interp))
+            screen.blit(ball.image, (x, y) if self.cfg_draw_simple else (x1, y1))
+            
+            pygame.display.flip()
+        
+        def _do_events(self):
+            mouse_motion = None
+            for e in pygame.event.get():
+                if e.type == KEYDOWN:
+                    if e.key == K_SPACE:
+                        self.cfg_draw_simple = not self.cfg_draw_simple
+                    elif e.key == K_ESCAPE:
+                        quit()
+                elif e.type == MOUSEMOTION:
+                    mouse_motion = e
+            if mouse_motion:
+                pass
+    
+    Game().run()
