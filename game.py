@@ -10,7 +10,7 @@ scaling.
 '''
 
 # System imports
-import time, random
+import time, random, math
 # Pygame imports
 import pygame
 from pygame.locals import *
@@ -61,7 +61,7 @@ class GameWindow:
     while self.running:
       self.clock.tick()
 
-  def update(self, args):
+  def update(self, dt):
     # Key is down (Holding down a key will keep triggering)
     keys_pressed = pygame.key.get_pressed()
     if keys_pressed[pygame.K_DOWN]:
@@ -76,7 +76,7 @@ class GameWindow:
           if event.key == K_ESCAPE:
             self.running = False
 
-  def draw(self, args):
+  def draw(self, dt):
     # Fill with black to get rid of previous blits
     self.displaysurf.fill((0,0,0))
     # Now all the draws:
@@ -96,11 +96,20 @@ class Terrain:
     self.regenerateCave()
     self.cave_surface = pygame.Surface((self.width*self.tile_size, self.height*self.tile_size))
     self.dirt_image = media.get("./images/dirt.png")
+    self.background_surface = self.drawBackground(media.get("./images/cave_background.png"))
     self.redrawCaveSurface()
+    self.redrawFinalSurface()
 
   def pan(self, x_offset=0, y_offset=0):
     self.x += x_offset
     self.y += y_offset
+
+  def drawBackground(self, background_image):
+    result = pygame.Surface((self.width*self.tile_size, self.height*self.tile_size))
+    for y in range( int(math.ceil(float(result.get_height()) / background_image.get_height())) ):
+      for x in range( int(math.ceil(float(result.get_width()) / background_image.get_width())) ):
+        result.blit(background_image, (x*background_image.get_width(), y*background_image.get_height()))
+    return result
 
   def redrawCaveSurface(self):
     brown = (100, 49, 12)
@@ -112,6 +121,11 @@ class Terrain:
         if self.cave_gen.land[y][x]:
           self.cave_surface.blit(self.dirt_image, (x*16, y*16))
     self.cave_surface.set_colorkey(purple)
+
+  def redrawFinalSurface(self):
+    self.final_surface = pygame.Surface((self.width*self.tile_size, self.height*self.tile_size))
+    self.final_surface.blit(self.background_surface, (0, 0))
+    self.final_surface.blit(self.cave_surface, (0, 0))
 
   def regenerateCave(self):
     self.cave_gen = cgen.CaveGenerator(width=self.width,
@@ -127,7 +141,7 @@ class Terrain:
     self.cave_gen.fillInEdges()
 
   def draw(self, window):
-    window.blit(self.cave_surface, (-self.x, -self.y))
+    window.blit(self.final_surface, (-self.x, -self.y))
 
 window = GameWindow()
 # Start 'er up!
