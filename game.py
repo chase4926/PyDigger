@@ -93,7 +93,7 @@ class Terrain:
     self.tile_size = 16
     self.regenerateCave()
     self.cave_surface = pygame.Surface((self.width*self.tile_size, self.height*self.tile_size))
-    self.dirt_image = media.get("./images/dirt2.png")
+    self.dirt_image = media.get("./images/dirt.png")
     self.background_surface = self.drawBackground(media.get("./images/cave_background.png"))
     self.redrawCaveSurface()
     self.redrawFinalSurface()
