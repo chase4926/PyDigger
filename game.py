@@ -17,7 +17,6 @@ from pygame.locals import *
 # Local imports
 import cave_generator as cgen
 import lib_medialoader as media
-import gameclock
 
 # Load images
 media.load_images("./images")
@@ -30,7 +29,10 @@ random.seed(seed)
 pygame.init()
 
 # Various varibles
-FPS = 60 # 0 = Unlimited
+TPS = 60 # Ticks per second (DON'T CHANGE THIS!)
+SKIP_TICKS = 1000 / TPS
+MAX_FRAMESKIP = 10
+#FPS = 0 # 0 = Unlimited (This one you can change)
 WIDTH = 1280
 HEIGHT = 720
 FULLSCREEN = False
@@ -44,11 +46,8 @@ class GameWindow:
       flags = flags | pygame.FULLSCREEN
     self.displaysurf = pygame.display.set_mode((WIDTH, HEIGHT), flags)
     pygame.display.set_caption("PyDigger")
-    self.clock = gameclock.GameClock(max_ups=60,
-                                     max_fps=FPS,
-                                     update_callback=self.update,
-                                     frame_callback=self.draw,
-                                     use_wait=False)
+    self.clock = pygame.time.Clock()
+    
     # Test
     self.terrain = Terrain()
 
@@ -59,9 +58,11 @@ class GameWindow:
     self.running = True
     
     while self.running:
-      self.clock.tick()
+      self.clock.tick(60)
+      self.update()
+      self.draw()
 
-  def update(self, dt):
+  def update(self):
     # Key is down (Holding down a key will keep triggering)
     keys_pressed = pygame.key.get_pressed()
     if keys_pressed[pygame.K_DOWN]:
@@ -76,7 +77,7 @@ class GameWindow:
           if event.key == K_ESCAPE:
             self.running = False
 
-  def draw(self, dt):
+  def draw(self):
     # Fill with black to get rid of previous blits
     self.displaysurf.fill((0,0,0))
     # Now all the draws:
