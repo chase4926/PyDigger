@@ -92,18 +92,28 @@ class Terrain:
     self.y = 0
     self.tile_size = 16
     self.regenerateCave()
-    self.cave_surface = pygame.Surface((self.width*self.tile_size, self.height*self.tile_size))
+    # Surfaces
     self.dirt_image = media.get("./images/dirt.png")
+    self.surface = pygame.Surface(self.getPixelSize())
+    self.cave_surface = pygame.Surface(self.getPixelSize())
     self.background_surface = self.drawBackground(media.get("./images/cave_background.png"))
-    self.redrawCaveSurface()
-    self.redrawFinalSurface()
+    self.redrawSurface()
 
   def pan(self, x_offset=0, y_offset=0):
     self.x += x_offset
     self.y += y_offset
 
+  def getPixelWidth(self):
+    return self.width * self.tile_size
+
+  def getPixelHeight(self):
+    return self.height * self.tile_size
+
+  def getPixelSize(self):
+    return (self.getPixelWidth(), self.getPixelHeight())
+
   def drawBackground(self, background_image):
-    result = pygame.Surface((self.width*self.tile_size, self.height*self.tile_size))
+    result = pygame.Surface(self.getPixelSize())
     for y in range( int(math.ceil(float(result.get_height()) / background_image.get_height())) ):
       for x in range( int(math.ceil(float(result.get_width()) / background_image.get_width())) ):
         result.blit(background_image, (x*background_image.get_width(), y*background_image.get_height()))
@@ -120,16 +130,16 @@ class Terrain:
           self.cave_surface.blit(self.dirt_image, (x*16, y*16))
     self.cave_surface.set_colorkey(purple)
 
-  def redrawFinalSurface(self):
-    self.final_surface = pygame.Surface((self.width*self.tile_size, self.height*self.tile_size))
-    self.final_surface.blit(self.background_surface, (0, 0))
-    self.final_surface.blit(self.cave_surface, (0, 0))
+  def redrawSurface(self):
+    self.redrawCaveSurface()
+    self.surface.blit(self.background_surface, (0, 0))
+    self.surface.blit(self.cave_surface, (0, 0))
 
   def regenerateCave(self):
     self.cave_gen = cgen.CaveGenerator(width=self.width,
                                        height=self.height,
                                        angle_deviation=45)
-    percents = (75, 50, 25, 10)
+    percents = (100, 75, 50, 25)
     # 150  120  80  40  10
     ranges = (self.height - 10, (self.height/4)+(self.height/2), self.height/2, self.height/4, 10)
     # Generate the cave system with 4 levels of complexity
@@ -139,7 +149,7 @@ class Terrain:
     self.cave_gen.fillInEdges()
 
   def draw(self, window):
-    window.blit(self.final_surface, (-self.x, -self.y))
+    window.blit(self.surface, (-self.x, -self.y))
 
 window = GameWindow()
 # Start 'er up!

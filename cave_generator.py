@@ -33,7 +33,7 @@ class CaveGenerator:
 
   def generateCave(self, x_range=None, y_range=None):
     # Determine amount of caves to carve
-    caves = self.getAmountOfCaves()
+    caves = self.getAmountOfCaves(x_range, y_range)
     
     # Iterate through caves to carve all caves
     for i in range(caves):
@@ -164,21 +164,26 @@ class CaveGenerator:
 
   def getLengthOfWalk(self):
     # The length of the cave is equal to the percentage of solid mass applied
-    # to the square root of the area then divided by 2
+    # to the square root of the area then +divided by 2
     # (square root of area is smaller than longest side)
     solidity = self.getLandSolidity()
     return int(round( (solidity * math.sqrt(self.area)) / 2 ))
 
-  def getAmountOfCaves(self):
-    # caves_percent is the percentage of caves to have - 50 = 50%
-    caves = float(self.area) / 400.0 # 400.0 gives a really nice amount of caves per land
+  def getAmountOfCaves(self, x_range, y_range):
+    if x_range == None:
+      x_range = (0, self.width - 1)
+    if y_range == None:
+      y_range = (0, self.height - 1)
+    area = (x_range[1] - x_range[0] + 1) * (y_range[1] - y_range[0] + 1)
+    caves = float(area) / 400.0 # 400.0 gives a really nice amount of caves per land
     # Modify caves to the percent wanted
-    caves = caves * (float(self.caves_percent) / 100.0)
+    caves *= (float(self.caves_percent) / 100.0)
     return int(round(caves))
 
 
-## --Debug script--
-#cave_gen = CaveGenerator(width=160, height=62, angle_deviation=60, caves_percent=100)
-#print cave_gen.generateCave()
-#print cave_gen.getCornerPoints(4, 5)
-#print cave_gen.getPathPoints(4, 5, 3) # Default radius is 3!!!
+# --Debug script--
+if __name__ == "__main__":
+  cave_gen = CaveGenerator(width=160, height=62, angle_deviation=60, caves_percent=100)
+  print cave_gen.generateCave()
+  #print cave_gen.getCornerPoints(4, 5)
+  #print cave_gen.getPathPoints(4, 5, 3) # Default radius is 3!!!
