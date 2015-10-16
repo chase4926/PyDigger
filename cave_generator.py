@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 import random, math
 from lib_misc import *
@@ -164,7 +165,7 @@ class CaveGenerator:
 
   def getLengthOfWalk(self):
     # The length of the cave is equal to the percentage of solid mass applied
-    # to the square root of the area then +divided by 2
+    # to the square root of the area then divided by 2
     # (square root of area is smaller than longest side)
     solidity = self.getLandSolidity()
     return int(round( (solidity * math.sqrt(self.area)) / 2 ))
