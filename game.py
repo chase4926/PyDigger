@@ -30,9 +30,6 @@ pygame.init()
 
 # Various varibles
 TPS = 60 # Ticks per second (DON'T CHANGE THIS!)
-SKIP_TICKS = 1000 / TPS
-MAX_FRAMESKIP = 10
-#FPS = 0 # 0 = Unlimited (This one you can change)
 WIDTH = 1280
 HEIGHT = 720
 FULLSCREEN = False
@@ -58,7 +55,7 @@ class GameWindow:
     self.running = True
     
     while self.running:
-      self.clock.tick(60)
+      self.clock.tick(TPS)
       self.update()
       self.draw()
 
