@@ -1,5 +1,5 @@
 - {amount: 474000.0, name: oxygen, z: 8}
-- {amount: 277100.0, name: silicon, z: 14}
+- {amount: 277100.0, name: 'silicon [A]', z: 14}
 - {amount: 82000.0, name: aluminium, z: 13}
 - {amount: 41000.0, name: iron, z: 26}
 - {amount: 41000.0, name: calcium, z: 20}
@@ -58,7 +58,7 @@
 - {amount: 0.48, name: thulium, z: 69}
 - {amount: 0.37, name: bromine, z: 35}
 - {amount: 0.6, name: thallium, z: 81}
-- {amount: 0.0, name: lutetium, z: 71}
+- {amount: 0.0, name: 'lutetium[7]', z: 71}
 - {amount: 0.2, name: antimony, z: 51}
 - {amount: 0.14, name: iodine, z: 53}
 - {amount: 0.11, name: cadmium, z: 48}

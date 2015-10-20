@@ -1,0 +1,13 @@
+- {amount: 100, name: aluminium, z: 13}
+- {amount: 95, name: iron, z: 26}
+- {amount: 80, name: carbon, z: 6}
+- {amount: 75, name: nickel, z: 28}
+- {amount: 60, name: copper, z: 29}
+- {amount: 50, name: cobalt, z: 27}
+- {amount: 40, name: lead, z: 82}
+- {amount: 40, name: tin, z: 50}
+- {amount: 10, name: uranium, z: 92}
+- {amount: 10, name: silver, z: 47}
+- {amount: 10, name: platinum, z: 78}
+- {amount: 10, name: gold, z: 79}
+- {amount: 10, name: osmium, z: 76}

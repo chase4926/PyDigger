@@ -5,14 +5,18 @@ from lib_misc import *
 
 
 class CaveGenerator:
-  def __init__(self, width=40, height=80, angle_deviation=60, caves_percent=100):
+  def __init__(self, width=40, height=80, angle_deviation=60,
+               caves_percent=100, fill=True, empty=False, path_width=(3,5)):
     self.angle_deviation = angle_deviation
     self.width = width
     self.height = height
     self.area = width * height
     self.caves_percent = caves_percent
+    self.fill = fill
+    self.empty = empty
+    self.path_width = (3, 5)
     # Start with a full land mass
-    self.land = self.createFullLand()
+    self.land = self.createFullLand(self.fill)
 
   def __str__(self):
     string = ""
@@ -20,10 +24,12 @@ class CaveGenerator:
     empty_char=" "
     for layer in self.land:
       for item in layer:
-        if item:
+        if item == self.fill:
           string += solid_char
-        else:
+        elif item == self.empty:
           string += empty_char
+        else:
+          string += "?"
       string += "\n"
     return string
 
@@ -45,7 +51,7 @@ class CaveGenerator:
       # Pick a random angle to walk in
       angle = random.randint(0, 359)
       # Get path width list
-      path_width = getRandomGradient(length, 3, 5)
+      path_width = getRandomGradient(length, *self.path_width)
       
       for step in range(length):
         # Deviate angle
@@ -85,7 +91,7 @@ class CaveGenerator:
     for point in points:
       x, y = point
       if self.pointInBounds(x, y):
-        land[y][x] = False
+        land[y][x] = self.empty
 
   def pointInBounds(self, x, y):
     return (x >= 0 and x < self.width) and (y >= 0 and y < self.height)
@@ -136,10 +142,10 @@ class CaveGenerator:
     for y in range(self.height):
       if y == 0 or y == self.height - 1:
         for x in range(self.width):
-          self.land[y][x] = True
+          self.land[y][x] = self.fill
       else:
-        self.land[y][0] = True
-        self.land[y][self.width-1] = True
+        self.land[y][0] = self.fill
+        self.land[y][self.width-1] = self.fill
     return self.land
 
   def getRandomPoint(self, x_range=None, y_range=None):
@@ -160,7 +166,7 @@ class CaveGenerator:
     # the land is.
     solidity = 0
     for layer in self.land:
-      solidity += layer.count(True)
+      solidity += layer.count(self.fill)
     return float(solidity) / float(self.area)
 
   def getLengthOfWalk(self):
@@ -184,7 +190,7 @@ class CaveGenerator:
 
 # --Debug script--
 if __name__ == "__main__":
-  cave_gen = CaveGenerator(width=160, height=62, angle_deviation=60, caves_percent=100)
+  cave_gen = CaveGenerator(width=160, height=62, angle_deviation=60, caves_percent=100, fill="wall", empty="hole")
   print cave_gen.generateCave()
   #print cave_gen.getCornerPoints(4, 5)
   #print cave_gen.getPathPoints(4, 5, 3) # Default radius is 3!!!

@@ -8,35 +8,20 @@ that's to be expected.
 ---
 
 
-###Part 1. The natural cave generator.###
+###Ore dispersal###
 
-+ Start with a land of size width, height (Possibly already has caves)
-+ Determine amount of caves based on area of land (width x height)
-+ Iterate through caves
-  + Pick a random spot in the land
-  + Determine length of walk based on solidity of cave, up to a maximum based on area
-  + Walk away from that spot in a random angle, and deviate slightly randomly
-    + If a wall is hit, pick rotation and adjust angle 45-90 degrees until aiming away from wall
-    + As walking, excavate all around randomly
-    + Very occasionally, randomly make a small cavern around current location
-      + Room diameter dependent on path diameter, currently path diameter is statics
-+ Return finished land with caves
++ Use a public resource on Earth's ores and pull data from it to create yaml file
++ Convert the yaml file to something game-ready
++ Use CaveGenerator to make ore veins
+  + Start with the common veins
+  + The later veins overwrite the previous; but they're rarer so it's not as common
++ Lay ore veins onto the walls of the generated cave system.
 
----
-###Part 2. The Visualizer.###
 
-+ Create a visualizer to visualize the caves, to make sure the generator doesn't need immediate tweaking
-+ This can either be graphical, or it can output to a file or terminal
+Perhaps restrict the number of ores per level? Or permanently?
 
-File and terminal have the inherent flaw that the text is taller than it is wide,
-we don't want this, as pixels in this model are square.
 
-If going the graphical route:
-+ Add graphics - currently uses solid color
-+ Perhaps adapt the graphics engine running the cave viewer to be the game engine
-
----
-###Part 3. The Game.###
+###The Game###
 
 ####Tech####
 
