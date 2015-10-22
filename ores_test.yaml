@@ -1,13 +1,13 @@
-- {amount: 100, name: aluminium, z: 13}
-- {amount: 95, name: iron, z: 26}
-- {amount: 80, name: carbon, z: 6}
-- {amount: 75, name: nickel, z: 28}
-- {amount: 60, name: copper, z: 29}
-- {amount: 50, name: cobalt, z: 27}
-- {amount: 40, name: lead, z: 82}
-- {amount: 40, name: tin, z: 50}
-- {amount: 10, name: uranium, z: 92}
-- {amount: 10, name: silver, z: 47}
-- {amount: 10, name: platinum, z: 78}
-- {amount: 10, name: gold, z: 79}
-- {amount: 10, name: osmium, z: 76}
+aluminium: {amount: 100, z: 13}
+carbon: {amount: 80, z: 6}
+cobalt: {amount: 50, z: 27}
+copper: {amount: 60, z: 29}
+gold: {amount: 10, z: 79}
+iron: {amount: 95, z: 26}
+lead: {amount: 40, z: 82}
+nickel: {amount: 75, z: 28}
+osmium: {amount: 10, z: 76}
+platinum: {amount: 10, z: 78}
+silver: {amount: 10, z: 47}
+tin: {amount: 40, z: 50}
+uranium: {amount: 10, z: 92}

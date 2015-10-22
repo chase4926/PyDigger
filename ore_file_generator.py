@@ -38,16 +38,15 @@ for row in table.find_all("tr")[1:]:
   datasets.append(dataset)
 
 # Convert list into yaml file and only take the parts that are useful
-yaml_array = []
+yaml_dict = {}
 
 for element in datasets:
   y_dict = {}
-  y_dict['name'] = str(element[2])
   y_dict['z'] = int(str(element[1]).replace(',', ''))
   if element[5] == '':
     element[5] = 0
   y_dict['amount'] = float(str(element[5]).replace(',', ''))
-  yaml_array.append(y_dict)
+  yaml_dict[str(element[2])] =y_dict
 
-with open('ores.yaml', 'w+') as f:
-  f.write(yaml.dump(yaml_array))
+with open('ores2.yaml', 'w+') as f:
+  f.write(yaml.dump(yaml_dict))

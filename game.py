@@ -11,6 +11,8 @@ scaling.
 
 # System imports
 import time, random, math
+# Third party libraries
+import yaml
 # Pygame imports
 import pygame
 from pygame.locals import *
@@ -83,15 +85,37 @@ class GameWindow:
     pygame.display.update()
 
 
+class Ores:
+  def __init__(self, filename):
+    self.filename = filename
+    self.load_ores_file()
+    # Surfaces
+    # For each entry in self.ores_array add ['image'] keys and corresponding surfs
+
+  def generate_ore_surfs(self):
+    ore_image = media.get("./images/ore.png")
+    for ore in self.ores_array:
+      print ore['name']
+
+  def load_ores_file(self):
+    with open(self.filename, 'r') as f:
+      self.ores_array = yaml.load(f.read())
+
+  def get_random_color(self):
+    return (random.randint(0, 256), random.randint(0, 256), random.randint(0, 256))
+
+
 class Terrain:
   # This class is the cave system that is drawn
   def __init__(self):
+    # Various Variables
     self.width = 80
     self.height = 160
     self.x = 0
     self.y = 0
     self.tile_size = 16
     self.regenerateCave()
+    self.ores = Ores("ores.yaml")
     # Surfaces
     self.dirt_image = media.get("./images/dirt.png")
     self.surface = pygame.Surface(self.getPixelSize())
@@ -134,6 +158,11 @@ class Terrain:
     self.redrawCaveSurface()
     self.surface.blit(self.background_surface, (0, 0))
     self.surface.blit(self.cave_surface, (0, 0))
+    # REMOVE ME!!!---
+    #image = media.get("./images/ore.png")
+    #image.fill((255, 0, 0), None, pygame.BLEND_RGBA_MULT)
+    #self.surface.blit(image, (0,0))
+    # ---
 
   def regenerateCave(self):
     self.cave_gen = cgen.CaveGenerator(width=self.width,
