@@ -46,7 +46,7 @@ for element in datasets:
   if element[5] == '':
     element[5] = 0
   y_dict['amount'] = float(str(element[5]).replace(',', ''))
-  yaml_dict[str(element[2])] =y_dict
+  yaml_dict[str(element[2])] = y_dict
 
 with open('ores2.yaml', 'w+') as f:
   f.write(yaml.dump(yaml_dict))

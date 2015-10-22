@@ -5,14 +5,14 @@ import yaml
 
 
 class OreCaveGenerator:
-  def __init__(self, width, height, ores_file):
+  def __init__(self, width, height, filename):
     self.width = width
     self.height = height
-    self.ores_file = ores_file
-    self.load_ores_file()
+    self.ores_file = filename
+    self.loadOresFile()
     self.regenerateCave()
 
-  def load_ores_file(self):
+  def loadOresFile(self):
     with open(self.ores_file, 'r') as f:
       self.ores_dict = yaml.load(f.read())
 
@@ -52,6 +52,7 @@ class OreCaveGenerator:
         range_y[1] = self.height - 1
       self.cave_gen.generateCave(y_range=(range_y[0], range_y[1]))
     self.cave_gen.fillInEdges()
+
 
 if __name__ == "__main__":
   cave_gen = OreCaveGenerator(width=160, height=62, ores_file="ores_test.yaml")

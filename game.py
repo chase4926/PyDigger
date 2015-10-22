@@ -17,7 +17,8 @@ import yaml
 import pygame
 from pygame.locals import *
 # Local imports
-import cave_generator as cgen
+from cave_generator import CaveGenerator
+from ore_cave_generator import OreCaveGenerator
 import lib_medialoader as media
 
 # Load images
@@ -88,21 +89,27 @@ class GameWindow:
 class Ores:
   def __init__(self, filename):
     self.filename = filename
-    self.load_ores_file()
+    self.loadOresFile()
     # Surfaces
     # For each entry in self.ores_array add ['image'] keys and corresponding surfs
+    self.generateOreSurfs()
 
-  def generate_ore_surfs(self):
+  def get(self, key):
+    return self.ores_dict[key]
+
+  def generateOreSurfs(self):
     ore_image = media.get("./images/ore.png")
-    for ore in self.ores_array:
-      print ore['name']
+    for name in self.ores_dict:
+      new_ore = ore_image.copy()
+      new_ore.fill(self.getRandomColor(), None, pygame.BLEND_RGBA_MULT)
+      self.ores_dict[name]['image'] = new_ore
 
-  def load_ores_file(self):
+  def loadOresFile(self):
     with open(self.filename, 'r') as f:
-      self.ores_array = yaml.load(f.read())
+      self.ores_dict = yaml.load(f.read())
 
-  def get_random_color(self):
-    return (random.randint(0, 256), random.randint(0, 256), random.randint(0, 256))
+  def getRandomColor(self):
+    return (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 
 
 class Terrain:
@@ -114,12 +121,18 @@ class Terrain:
     self.x = 0
     self.y = 0
     self.tile_size = 16
+    self.ores_file = "ores_test.yaml"
+    self.ores = Ores(self.ores_file)
+    # Cave generation
     self.regenerateCave()
-    self.ores = Ores("ores.yaml")
+    self.ore_gen = OreCaveGenerator(width=self.width,
+                                    height=self.height,
+                                    filename=self.ores_file)
     # Surfaces
     self.dirt_image = media.get("./images/dirt.png")
     self.surface = pygame.Surface(self.getPixelSize())
     self.cave_surface = pygame.Surface(self.getPixelSize())
+    self.ore_surface = pygame.Surface(self.getPixelSize())
     self.background_surface = self.drawBackground(media.get("./images/cave_background.png"))
     self.redrawSurface()
 
@@ -144,7 +157,6 @@ class Terrain:
     return result
 
   def redrawCaveSurface(self):
-    brown = (100, 49, 12)
     purple = (255, 0, 255)
     # Fill with purple (the transparency color)
     self.cave_surface.fill(purple)
@@ -154,20 +166,27 @@ class Terrain:
           self.cave_surface.blit(self.dirt_image, (x*16, y*16))
     self.cave_surface.set_colorkey(purple)
 
+  def redrawOreSurface(self):
+    purple = (255, 0, 255)
+    self.ore_surface.fill(purple)
+    for y in range(self.height):
+      for x in range(self.width):
+        material = self.ore_gen.cave_gen.land[y][x]
+        if material != True:
+          self.ore_surface.blit(self.ores.get(material)['image'], (x*16, y*16))
+    self.ore_surface.set_colorkey(purple)
+
   def redrawSurface(self):
     self.redrawCaveSurface()
+    self.redrawOreSurface()
     self.surface.blit(self.background_surface, (0, 0))
     self.surface.blit(self.cave_surface, (0, 0))
-    # REMOVE ME!!!---
-    #image = media.get("./images/ore.png")
-    #image.fill((255, 0, 0), None, pygame.BLEND_RGBA_MULT)
-    #self.surface.blit(image, (0,0))
-    # ---
+    self.surface.blit(self.ore_surface, (0, 0))
 
   def regenerateCave(self):
-    self.cave_gen = cgen.CaveGenerator(width=self.width,
-                                       height=self.height,
-                                       angle_deviation=45)
+    self.cave_gen = CaveGenerator(width=self.width,
+                                  height=self.height,
+                                  angle_deviation=45)
     percents = (100, 75, 50, 25)
     # 150  120  80  40  10
     ranges = (self.height - 10, (self.height/4)+(self.height/2), self.height/2, self.height/4, 10)
