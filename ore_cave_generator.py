@@ -21,20 +21,35 @@ class OreCaveGenerator:
                                        height=self.height,
                                        angle_deviation=180,
                                        path_width=(1,2))
-    percent_range = range(6, 21)
-    
+    # (Minimum percent for caves, maximmum)
+    percent_range = range(20, 40)
+    # Determine the minimum and maximum z levels
+    minz = self.ores_array[0]['z']
+    maxz = self.ores_array[0]['z']
     for ore in self.ores_array:
+      if ore['z'] > maxz:
+        maxz = ore['z']
+      if ore['z'] < minz:
+        minz = ore['z']
+    # Loop Through all the types of ores, and generate a cave system for each
+    for ore in self.ores_array:
+      # Set the empty space (space dug out by gen) to the ore's name
       self.cave_gen.empty = ore['name']
+      # Set the percent to the ore percent projected onto percent_range
       self.cave_gen.caves_percent = percent_range[int(round( (len(percent_range)-1) * (ore['amount'] / 100.0) ))]
-      # Above works correctly, just need to find y_range now
-    
-    #ranges = (self.height - 10, (self.height/4)+(self.height/2), self.height/2, self.height/4, 10)
-    ## Generate the cave system with 4 levels of complexity
-    #for i in range(4):
-      #self.cave_gen.caves_percent = percents[i]
-      #self.cave_gen.generateCave(y_range=(ranges[i+1], ranges[i]))
-    #self.cave_gen.fillInEdges()
+      # Find y_range now based on ore['z']
+      y_level = self.height * ((ore['z'] - minz) / float(maxz - minz))
+      variation = self.height * 0.05
+      range_y = [int(round(y_level-variation)), int(round(y_level+variation))]
+      if range_y[0] < 0:
+        range_y[1] += -range_y[0]
+        range_y[0] = 0
+      if range_y[1] > self.height - 1:
+        range_y[0] -= (range_y[1] - self.height - 1)
+        range_y[1] = self.height - 1
+      self.cave_gen.generateCave(y_range=(range_y[0], range_y[1]))
+    self.cave_gen.fillInEdges()
 
 if __name__ == "__main__":
   cave_gen = OreCaveGenerator(width=160, height=62, ores_file="ores_test.yaml")
-  #print cave_gen.cave_gen
+  print cave_gen.cave_gen
