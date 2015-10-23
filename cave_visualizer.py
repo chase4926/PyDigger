@@ -16,7 +16,6 @@ import pygame
 from pygame.locals import *
 # Local imports
 import cave_generator as cgen
-import gameclock
 
 
 # Seed with the current time
@@ -31,7 +30,6 @@ FPS = 0 # 0 = Unlimited
 COLOR_BLACK = (0, 0, 0)
 COLOR_PURPLE = (255, 0, 255)
 COLOR_BROWN = (100, 49, 12)
-BACKGROUND_IMG = pygame.image.load("./images/tileable_cave_background.png")
 # Cave generator config
 WIDTH = 250
 HEIGHT = 150
@@ -47,7 +45,7 @@ class GameWindow:
     # Set up the window
     self.displaysurf = pygame.display.set_mode((self.cave_gen.width*SCALE, self.cave_gen.height*SCALE), pygame.DOUBLEBUF)
     pygame.display.set_caption("Cave Visualizer")
-    self.clock = gameclock.GameClock(60, FPS)
+    self.clock = pygame.time.Clock()
     # Surface to draw the cave on
     self.cave_surf = pygame.Surface((self.cave_gen.width, self.cave_gen.height))
     # Surface to scale the cave surface on
@@ -72,18 +70,17 @@ class GameWindow:
     pygame.transform.scale(self.cave_surf, (self.cave_gen.width*SCALE, self.cave_gen.height*SCALE), self.draw_surf)
     # Remove background color for transparency
     self.draw_surf.set_colorkey(COLOR_PURPLE)
-    #self.displaysurf.blit(BACKGROUND_IMG, (0, 0))
     self.displaysurf.blit(self.draw_surf, (0, 0))
 
   def main(self):
     self.running = True
     
     while self.running:
-      self.clock.tick()
-      if self.clock.update_ready:
-        self.update()
-      if self.clock.frame_ready:
-        self.draw()
+      self.clock.tick(60)
+      #if self.clock.update_ready:
+      self.update()
+      #if self.clock.frame_ready:
+      self.draw()
       pygame.display.update()
 
   def update(self):
