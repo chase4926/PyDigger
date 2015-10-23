@@ -125,18 +125,15 @@ class Terrain:
     self.ores = Ores(self.ores_file)
     # Cave generation
     self.regenerateCave()
-    self.ore_gen = OreCaveGenerator(width=self.width,
-                                    height=self.height,
-                                    filename=self.ores_file)
     # Surfaces
     self.dirt_image = media.get("./images/dirt.png")
     self.surface = pygame.Surface(self.getPixelSize())
     self.cave_surface = pygame.Surface(self.getPixelSize())
-    self.ore_surface = pygame.Surface(self.getPixelSize())
     self.background_surface = self.drawBackground(media.get("./images/cave_background.png"))
     self.redrawSurface()
 
   def pan(self, x_offset=0, y_offset=0):
+    # In the future this class will _NOT_ control where it's surface is drawn.
     self.x += x_offset
     self.y += y_offset
 
@@ -162,28 +159,22 @@ class Terrain:
     self.cave_surface.fill(purple)
     for y in range(self.height):
       for x in range(self.width):
-        if self.cave_gen.land[y][x]:
+        if self.land[y][x] != False:
+          # Not air, so there's something to draw
+          # First draw the ground
           self.cave_surface.blit(self.dirt_image, (x*16, y*16))
+          if self.land[y][x] != True:
+            # Ore here!
+            self.cave_surface.blit(self.ores.get(self.land[y][x])['image'], (x*16, y*16))
     self.cave_surface.set_colorkey(purple)
-
-  def redrawOreSurface(self):
-    purple = (255, 0, 255)
-    self.ore_surface.fill(purple)
-    for y in range(self.height):
-      for x in range(self.width):
-        material = self.ore_gen.cave_gen.land[y][x]
-        if material != True:
-          self.ore_surface.blit(self.ores.get(material)['image'], (x*16, y*16))
-    self.ore_surface.set_colorkey(purple)
 
   def redrawSurface(self):
     self.redrawCaveSurface()
-    self.redrawOreSurface()
     self.surface.blit(self.background_surface, (0, 0))
     self.surface.blit(self.cave_surface, (0, 0))
-    self.surface.blit(self.ore_surface, (0, 0))
 
   def regenerateCave(self):
+    # - First generate regular cave system
     self.cave_gen = CaveGenerator(width=self.width,
                                   height=self.height,
                                   angle_deviation=45)
@@ -195,6 +186,28 @@ class Terrain:
       self.cave_gen.caves_percent = percents[i]
       self.cave_gen.generateCave(y_range=(ranges[i+1], ranges[i]))
     self.cave_gen.fillInEdges()
+    # - Next generate the ore fields
+    self.ore_gen = OreCaveGenerator(width=self.width,
+                                    height=self.height,
+                                    filename=self.ores_file)
+    # - Finally fill out the land variable with appropriate values
+    self.land = []
+    for y in range(self.height):
+      layer = []
+      for x in range(self.width):
+        if self.cave_gen.land[y][x]:
+          # This is the wall of the cave
+          material = self.ore_gen.cave_gen.land[y][x]
+          if material != True:
+            # Ore is here, let's use it
+            layer.append(material)
+          else:
+            # No ore here, just ground
+            layer.append(True)
+        else:
+          # Empty air
+          layer.append(False)
+      self.land.append(layer)
 
   def draw(self, window):
     window.blit(self.surface, (-self.x, -self.y))

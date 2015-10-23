@@ -1,4 +1,12 @@
 
+"""
+ore_cave_generator.py
+---------------------
+
+Uses cave_generator.py and the output of ore_file_generator.py and creates ore
+fields within it's width and height. These ore fields can then be applied to a
+regular cave system to make a ore-filled cave.
+"""
 
 import cave_generator as cgen
 import yaml
@@ -22,7 +30,7 @@ class OreCaveGenerator:
                                        angle_deviation=180,
                                        path_width=(1,2))
     # (Minimum percent for caves, maximmum)
-    percent_range = range(20, 40)
+    percent_range = range(20, 60)
     # Determine the minimum and maximum z levels
     minz = self.ores_dict[self.ores_dict.keys()[0]]['z']
     maxz = minz
@@ -38,22 +46,22 @@ class OreCaveGenerator:
       # Set the empty space (space dug out by gen) to the ore's name
       self.cave_gen.empty = name
       # Set the percent to the ore percent projected onto percent_range
-      print (ore['amount'] / 100.0)
       self.cave_gen.caves_percent = percent_range[int(round( (len(percent_range)-1) * (ore['amount'] / 100.0) ))]
       # Find y_range now based on ore['z']
       y_level = self.height * ((ore['z'] - minz) / float(maxz - minz))
       variation = self.height * 0.05
-      range_y = [int(round(y_level-variation)), int(round(y_level+variation))]
-      if range_y[0] < 0:
-        range_y[1] += -range_y[0]
-        range_y[0] = 0
-      if range_y[1] > self.height - 1:
-        range_y[0] -= (range_y[1] - self.height - 1)
-        range_y[1] = self.height - 1
-      self.cave_gen.generateCave(y_range=(range_y[0], range_y[1]))
+      y_range = [int(round(y_level-variation)), int(round(y_level+variation))]
+      # Shift y_range to be within bounds
+      if y_range[0] < 0:
+        y_range[1] += -y_range[0]
+        y_range[0] = 0
+      if y_range[1] > self.height - 1:
+        y_range[0] -= (y_range[1] - self.height - 1)
+        y_range[1] = self.height - 1
+      self.cave_gen.generateCave(y_range=y_range)
     self.cave_gen.fillInEdges()
 
 
 if __name__ == "__main__":
-  cave_gen = OreCaveGenerator(width=160, height=62, ores_file="ores_test.yaml")
+  cave_gen = OreCaveGenerator(width=160, height=62, filename="ores_test.yaml")
   print cave_gen.cave_gen
