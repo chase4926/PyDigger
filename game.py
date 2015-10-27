@@ -52,7 +52,7 @@ class GameWindow:
   def blit(self, surface, coords):
     self.displaysurf.blit(surface, coords)
 
-  def main(self):
+  def loop(self):
     self.running = True
     
     while self.running:
@@ -67,17 +67,12 @@ class GameWindow:
       # "Flip" the display
       pygame.display.update()
 
-  def update(self):
-    pass
-
-  def draw(self):
-    pass
-
 
 class Controller:
   def __init__(self, window):
     self.window = window
     self.terrain = Terrain()
+    self.mousetooltip = MouseToolTip(self.terrain)
 
   def update(self):
     # Key is down (Holding down a key will keep triggering)
@@ -93,10 +88,31 @@ class Controller:
         if event.type == KEYDOWN:
           if event.key == K_ESCAPE:
             self.window.running = False
+          #elif event.key == K_SPACE:
+            #print self.mousetooltip.get_current()
 
   def draw(self):
     # All the draws:
     self.terrain.draw(self.window)
+    # Remove eventually
+    self.mousetooltip.draw(self.window)
+
+
+class MouseToolTip:
+  def __init__(self, terrain):
+    self.terrain = terrain
+    self.font = pygame.font.Font("freesansbold.ttf", 32)
+
+  def get_current(self):
+    mousex, mousey = pygame.mouse.get_pos()
+    x = int(round(float(mousex + self.terrain.x - 8) / self.terrain.tile_size))
+    y = int(round(float(mousey + self.terrain.y - 8) / self.terrain.tile_size))
+    #return str(x) + " , " + str(y)
+    return self.terrain.get(x, y)
+
+  def draw(self, window):
+    text = self.font.render(self.get_current(), True, (255, 255, 255))
+    window.blit(text, (32, 32))
 
 
 class Ores:
@@ -144,6 +160,18 @@ class Terrain:
     self.cave_surface = pygame.Surface(self.getPixelSize())
     self.background_surface = self.drawBackground()
     self.redrawSurface()
+
+  def get(self, x, y):
+    if self.cave_gen.pointInBounds(x, y):
+      material = self.land[y][x]
+      if material == False:
+        return "air"
+      elif material == True:
+        return "dirt"
+      else:
+        return material
+    else:
+      return "void"
 
   def pan(self, x_offset=0, y_offset=0):
     # In the future this class will _NOT_ control where it's surface is drawn.
@@ -228,7 +256,7 @@ class Terrain:
 
 window = GameWindow()
 # Start 'er up!
-window.main()
+window.loop()
 # Deconstruct all pygame stuff
 pygame.quit()
 
