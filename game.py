@@ -47,9 +47,7 @@ class GameWindow:
     self.displaysurf = pygame.display.set_mode((WIDTH, HEIGHT), flags)
     pygame.display.set_caption("PyDigger")
     self.clock = pygame.time.Clock()
-    
-    # Test
-    self.terrain = Terrain()
+    self.controller = Controller(self)
 
   def blit(self, surface, coords):
     self.displaysurf.blit(surface, coords)
@@ -58,9 +56,28 @@ class GameWindow:
     self.running = True
     
     while self.running:
+      # Keep the game running smoothly
       self.clock.tick(TPS)
-      self.update()
-      self.draw()
+      # Update the controller
+      self.controller.update()
+      # Fill with black to get rid of previous blits
+      self.displaysurf.fill((0,0,0))
+      # Let the controller draw everything
+      self.controller.draw()
+      # "Flip" the display
+      pygame.display.update()
+
+  def update(self):
+    pass
+
+  def draw(self):
+    pass
+
+
+class Controller:
+  def __init__(self, window):
+    self.window = window
+    self.terrain = Terrain()
 
   def update(self):
     # Key is down (Holding down a key will keep triggering)
@@ -72,18 +89,14 @@ class GameWindow:
     # Key presses (Holding down a key will only trigger once)
     for event in pygame.event.get():
         if event.type == QUIT:
-          self.running = False
+          self.window.running = False
         if event.type == KEYDOWN:
           if event.key == K_ESCAPE:
-            self.running = False
+            self.window.running = False
 
   def draw(self):
-    # Fill with black to get rid of previous blits
-    self.displaysurf.fill((0,0,0))
-    # Now all the draws:
-    self.terrain.draw(self)
-    # "Flip" the display
-    pygame.display.update()
+    # All the draws:
+    self.terrain.draw(self.window)
 
 
 class Ores:
@@ -129,7 +142,7 @@ class Terrain:
     self.dirt_image = media.get("./images/dirt.png")
     self.surface = pygame.Surface(self.getPixelSize())
     self.cave_surface = pygame.Surface(self.getPixelSize())
-    self.background_surface = self.drawBackground(media.get("./images/cave_background.png"))
+    self.background_surface = self.drawBackground()
     self.redrawSurface()
 
   def pan(self, x_offset=0, y_offset=0):
@@ -146,7 +159,8 @@ class Terrain:
   def getPixelSize(self):
     return (self.getPixelWidth(), self.getPixelHeight())
 
-  def drawBackground(self, background_image):
+  def drawBackground(self):
+    background_image = media.get("./images/cave_background.png")
     result = pygame.Surface(self.getPixelSize())
     for y in range( int(math.ceil(float(result.get_height()) / background_image.get_height())) ):
       for x in range( int(math.ceil(float(result.get_width()) / background_image.get_width())) ):
@@ -197,7 +211,7 @@ class Terrain:
       for x in range(self.width):
         if self.cave_gen.land[y][x]:
           # This is the wall of the cave
-          material = self.ore_gen.cave_gen.land[y][x]
+          material = self.ore_gen.land[y][x]
           if material != True:
             # Ore is here, let's use it
             layer.append(material)
