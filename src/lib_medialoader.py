@@ -20,7 +20,6 @@ def load_images(path):
       if filename.split(".", 1)[1].lower() in PYGAME_IMAGE_EXTENSIONS:
         filename = os.path.join(dirname, filename).replace("\\", "/")
         IMAGE_DICT[filename.split(path, 1)[1]] = pygame.image.load(filename)
-  print IMAGE_DICT
 
 def get(path):
   return IMAGE_DICT[path]

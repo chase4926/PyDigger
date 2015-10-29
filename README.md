@@ -6,7 +6,9 @@ This is a very rough draft design document, if it isn't grammatically correct,
 that's to be expected.
 
 ---
-
+NOTE: elements-cached.html is a cached version of the following site's html:
+https://en.wikipedia.org/wiki/Abundance_of_elements_in_Earth%27s_crust
+---
 
 ###Ore dispersal###
 
