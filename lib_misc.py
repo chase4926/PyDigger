@@ -33,3 +33,6 @@ def getRandomGradient(length, minimum, maximum):
     result[i] = int(round(minimum + (percent * (maximum - minimum))))
   return result
 
+def getRandomColor():
+  return (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+

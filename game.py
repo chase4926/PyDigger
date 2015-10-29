@@ -17,6 +17,7 @@ import yaml
 import pygame
 from pygame.locals import *
 # Local imports
+from lib_misc import *
 from cave_generator import CaveGenerator
 from ore_cave_generator import OreCaveGenerator
 import lib_medialoader as media
@@ -130,15 +131,12 @@ class Ores:
     ore_image = media.get("./images/ore.png")
     for name in self.ores_dict:
       new_ore = ore_image.copy()
-      new_ore.fill(self.getRandomColor(), None, pygame.BLEND_RGBA_MULT)
+      new_ore.fill(getRandomColor(), None, pygame.BLEND_RGBA_MULT)
       self.ores_dict[name]['image'] = new_ore
 
   def loadOresFile(self):
     with open(self.filename, 'r') as f:
       self.ores_dict = yaml.load(f.read())
-
-  def getRandomColor(self):
-    return (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 
 
 class Terrain:
