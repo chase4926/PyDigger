@@ -67,5 +67,5 @@ class OreCaveGenerator:
 
 
 if __name__ == "__main__":
-  cave_gen = OreCaveGenerator(width=160, height=62, filename="ores_test.yaml")
+  cave_gen = OreCaveGenerator(width=160, height=62, filename="../ores_test.yaml")
   print cave_gen

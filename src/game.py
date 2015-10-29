@@ -10,7 +10,7 @@ scaling.
 '''
 
 # System imports
-import time, random, math
+import time, random, math, os
 # Third party libraries
 import yaml
 # Pygame imports
@@ -22,8 +22,11 @@ from cave_generator import CaveGenerator
 from ore_cave_generator import OreCaveGenerator
 import lib_medialoader as media
 
+# Make sure we're in the right directory
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
+
 # Load images
-media.load_images("./images")
+media.load_images("../images/")
 
 # Seed with the current time
 seed = time.strftime("%y%m%d%H%M%S")
@@ -128,7 +131,7 @@ class Ores:
     return self.ores_dict[key]
 
   def generateOreSurfs(self):
-    ore_image = media.get("./images/ore.png")
+    ore_image = media.get("ore.png")
     for name in self.ores_dict:
       new_ore = ore_image.copy()
       new_ore.fill(getRandomColor(), None, pygame.BLEND_RGBA_MULT)
@@ -148,12 +151,12 @@ class Terrain:
     self.x = 0
     self.y = 0
     self.tile_size = 16
-    self.ores_file = "ores_test.yaml"
+    self.ores_file = "../ores_test.yaml"
     self.ores = Ores(self.ores_file)
     # Cave generation
     self.regenerateCave()
     # Surfaces
-    self.dirt_image = media.get("./images/dirt.png")
+    self.dirt_image = media.get("dirt.png")
     self.surface = pygame.Surface(self.getPixelSize())
     self.cave_surface = pygame.Surface(self.getPixelSize())
     self.background_surface = self.drawBackground()
@@ -186,7 +189,7 @@ class Terrain:
     return (self.getPixelWidth(), self.getPixelHeight())
 
   def drawBackground(self):
-    background_image = media.get("./images/cave_background.png")
+    background_image = media.get("cave_background.png")
     result = pygame.Surface(self.getPixelSize())
     for y in range( int(math.ceil(float(result.get_height()) / background_image.get_height())) ):
       for x in range( int(math.ceil(float(result.get_width()) / background_image.get_width())) ):

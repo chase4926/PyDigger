@@ -22,7 +22,7 @@ from bs4 import BeautifulSoup
 from lib_misc import getRandomColor
 
 
-HTML_FILE = 'elements-cached.html'
+HTML_FILE = '../elements-cached.html'
 
 def write_html_file(html):
   with open(HTML_FILE, 'w+') as f:
@@ -72,6 +72,7 @@ for element in datasets:
 def sort_by_z(key):
   return yaml_dict[key]['z']
 
+# Sort keys of yaml_dict into z_sorted by yaml_dict[key]['z']
 z_sorted = sorted(yaml_dict, key=sort_by_z, reverse=False)
 
 # Convert Z to game-usable z levels
