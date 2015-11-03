@@ -15,7 +15,7 @@ import time, random
 import pygame
 from pygame.locals import *
 # Local imports
-import cave_generator as cgen
+from cave_generator.cave_generator import *
 
 
 # Seed with the current time
@@ -40,7 +40,7 @@ class GameWindow:
   def __init__(self):
     # Generate a cave
     # Every day I seem to prefer different settings on this
-    self.cave_gen = cgen.CaveGenerator(width=WIDTH, height=HEIGHT, angle_deviation=45, caves_percent=75)
+    self.cave_gen = CaveGenerator(width=WIDTH, height=HEIGHT, angle_deviation=45, caves_percent=75)
     self.cave_gen.generateCave(y_range=(100, 140))
     # Set up the window
     self.displaysurf = pygame.display.set_mode((self.cave_gen.width*SCALE, self.cave_gen.height*SCALE), pygame.DOUBLEBUF)
