@@ -16,12 +16,14 @@ import yaml
 # Pygame imports
 import pygame
 from pygame.locals import *
-# Local imports
+# Local library imports
 from lib_misc import *
 from cave_generator.cave_generator import CaveGenerator
 from cave_generator.ore_cave_generator import OreCaveGenerator
 import lib_medialoader as media
 from ore_loader import *
+# Local Classes
+from terrain_generator import Terrain
 
 # Make sure we're in the right directory
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
@@ -76,16 +78,16 @@ class GameWindow:
 class Controller:
   def __init__(self, window):
     self.window = window
-    self.terrain = Terrain()
-    self.mousetooltip = MouseToolTip(self.terrain)
+    self.world = World()
+    self.mousetooltip = MouseToolTip(self.world)
 
   def update(self):
     # Key is down (Holding down a key will keep triggering)
     keys_pressed = pygame.key.get_pressed()
     if keys_pressed[pygame.K_DOWN]:
-      self.terrain.pan(y_offset=4)
+      self.world.pan(y_offset=4)
     if keys_pressed[pygame.K_UP]:
-      self.terrain.pan(y_offset=-4)
+      self.world.pan(y_offset=-4)
     # Key presses (Holding down a key will only trigger once)
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -98,21 +100,21 @@ class Controller:
 
   def draw(self):
     # All the draws:
-    self.terrain.draw(self.window)
+    self.world.draw(self.window)
     # Remove eventually
     self.mousetooltip.draw(self.window)
 
 
 class MouseToolTip:
-  def __init__(self, terrain):
-    self.terrain = terrain
+  def __init__(self, world):
+    self.world = world
+    self.terrain = world.terrain
     self.font = pygame.font.Font("freesansbold.ttf", 32)
 
   def get_current(self):
     mousex, mousey = pygame.mouse.get_pos()
-    x = int(round(float(mousex + self.terrain.x - 8) / self.terrain.tile_size))
-    y = int(round(float(mousey + self.terrain.y - 8) / self.terrain.tile_size))
-    #return str(x) + " , " + str(y)
+    x = int(round(float(mousex + self.world.terrain_x - 8) / self.terrain.tile_size))
+    y = int(round(float(mousey + self.world.terrain_y - 8) / self.terrain.tile_size))
     return self.terrain.get(x, y)
 
   def draw(self, window):
@@ -120,118 +122,21 @@ class MouseToolTip:
     window.blit(text, (32, 32))
 
 
-class Terrain:
-  # This class is the cave system that is drawn
+class World:
   def __init__(self):
-    # Various Variables
-    self.width = 80
-    self.height = 160
-    self.x = 0
-    self.y = 0
-    self.tile_size = 16
-    self.ores_file = "../ores_test.yaml"
-    self.ores = Ores(self.ores_file)
-    # Cave generation
-    self.regenerateCave()
-    # Surfaces
-    self.dirt_image = media.get("dirt.png")
-    self.surface = pygame.Surface(self.getPixelSize())
-    self.cave_surface = pygame.Surface(self.getPixelSize())
-    self.background_surface = self.drawBackground()
-    self.redrawSurface()
-
-  def get(self, x, y):
-    if self.cave_gen.pointInBounds(x, y):
-      material = self.land[y][x]
-      if material == False:
-        return "air"
-      elif material == True:
-        return "dirt"
-      else:
-        return material
-    else:
-      return "void"
+    self.terrain = Terrain()
+    self.terrain_x = 0
+    self.terrain_y = 0
 
   def pan(self, x_offset=0, y_offset=0):
-    # In the future this class will _NOT_ control where it's surface is drawn.
-    self.x += x_offset
-    self.y += y_offset
-
-  def getPixelWidth(self):
-    return self.width * self.tile_size
-
-  def getPixelHeight(self):
-    return self.height * self.tile_size
-
-  def getPixelSize(self):
-    return (self.getPixelWidth(), self.getPixelHeight())
-
-  def drawBackground(self):
-    background_image = media.get("cave_background.png")
-    result = pygame.Surface(self.getPixelSize())
-    for y in range( int(math.ceil(float(result.get_height()) / background_image.get_height())) ):
-      for x in range( int(math.ceil(float(result.get_width()) / background_image.get_width())) ):
-        result.blit(background_image, (x*background_image.get_width(), y*background_image.get_height()))
-    return result
-
-  def redrawCaveSurface(self):
-    purple = (255, 0, 255)
-    # Fill with purple (the transparency color)
-    self.cave_surface.fill(purple)
-    for y in range(self.height):
-      for x in range(self.width):
-        if self.land[y][x] != False:
-          # Not air, so there's something to draw
-          # First draw the ground
-          self.cave_surface.blit(self.dirt_image, (x*16, y*16))
-          if self.land[y][x] != True:
-            # Ore here!
-            self.cave_surface.blit(self.ores.get(self.land[y][x])['image'], (x*16, y*16))
-    self.cave_surface.set_colorkey(purple)
-
-  def redrawSurface(self):
-    self.redrawCaveSurface()
-    self.surface.blit(self.background_surface, (0, 0))
-    self.surface.blit(self.cave_surface, (0, 0))
-
-  def regenerateCave(self):
-    # - First generate regular cave system
-    self.cave_gen = CaveGenerator(width=self.width,
-                                  height=self.height,
-                                  angle_deviation=45)
-    percents = (100, 75, 50, 25)
-    # 150  120  80  40  10
-    ranges = (self.height - 10, (self.height/4)+(self.height/2), self.height/2, self.height/4, 10)
-    # Generate the cave system with 4 levels of complexity
-    for i in range(4):
-      self.cave_gen.caves_percent = percents[i]
-      self.cave_gen.generateCave(y_range=(ranges[i+1], ranges[i]))
-    self.cave_gen.fillInEdges()
-    # - Next generate the ore fields
-    self.ore_gen = OreCaveGenerator(width=self.width,
-                                    height=self.height,
-                                    filename=self.ores_file)
-    # - Finally fill out the land variable with appropriate values
-    self.land = []
-    for y in range(self.height):
-      layer = []
-      for x in range(self.width):
-        if self.cave_gen.land[y][x]:
-          # This is the wall of the cave
-          material = self.ore_gen.land[y][x]
-          if material != True:
-            # Ore is here, let's use it
-            layer.append(material)
-          else:
-            # No ore here, just ground
-            layer.append(True)
-        else:
-          # Empty air
-          layer.append(False)
-      self.land.append(layer)
+    self.terrain_x += x_offset
+    self.terrain_y += y_offset
 
   def draw(self, window):
-    window.blit(self.surface, (-self.x, -self.y))
+    window.blit(self.terrain.surface, (-self.terrain_x, -self.terrain_y))
+
+
+
 
 window = GameWindow()
 # Start 'er up!
