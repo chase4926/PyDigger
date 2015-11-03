@@ -18,9 +18,10 @@ import pygame
 from pygame.locals import *
 # Local imports
 from lib_misc import *
-from cave_generator import CaveGenerator
-from ore_cave_generator import OreCaveGenerator
+from cave_generator.cave_generator import CaveGenerator
+from cave_generator.ore_cave_generator import OreCaveGenerator
 import lib_medialoader as media
+from ore_loader import *
 
 # Make sure we're in the right directory
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
@@ -117,29 +118,6 @@ class MouseToolTip:
   def draw(self, window):
     text = self.font.render(self.get_current(), True, (255, 255, 255))
     window.blit(text, (32, 32))
-
-
-class Ores:
-  def __init__(self, filename):
-    self.filename = filename
-    self.loadOresFile()
-    # Surfaces
-    # For each entry in self.ores_array add ['image'] keys and corresponding surfs
-    self.generateOreSurfs()
-
-  def get(self, key):
-    return self.ores_dict[key]
-
-  def generateOreSurfs(self):
-    ore_image = media.get("ore.png")
-    for name in self.ores_dict:
-      new_ore = ore_image.copy()
-      new_ore.fill(getRandomColor(), None, pygame.BLEND_RGBA_MULT)
-      self.ores_dict[name]['image'] = new_ore
-
-  def loadOresFile(self):
-    with open(self.filename, 'r') as f:
-      self.ores_dict = yaml.load(f.read())
 
 
 class Terrain:
