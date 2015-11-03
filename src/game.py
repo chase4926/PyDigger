@@ -124,7 +124,7 @@ class MouseToolTip:
 
 class World:
   def __init__(self):
-    self.terrain = Terrain()
+    self.terrain = Terrain(width=80, height=160)
     self.terrain_x = 0
     self.terrain_y = 0
 

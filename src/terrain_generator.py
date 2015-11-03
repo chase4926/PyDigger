@@ -9,14 +9,12 @@ import lib_medialoader as media
 
 class Terrain:
   # This class is the cave system that is drawn
-  def __init__(self):
+  def __init__(self, width=80, height=160, ores_file="../ores_test.yaml"):
     # Various Variables
-    self.width = 80
-    self.height = 160
-    #self.x = 0
-    #self.y = 0
+    self.width = width
+    self.height = height
     self.tile_size = 16
-    self.ores_file = "../ores_test.yaml"
+    self.ores_file = ores_file
     self.ores = Ores(self.ores_file)
     # Cave generation
     self.regenerateCave()

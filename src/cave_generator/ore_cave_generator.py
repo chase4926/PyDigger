@@ -19,6 +19,7 @@ class OreCaveGenerator:
     self.ores_file = filename
     self.loadOresFile()
     self.regenerateCave()
+    print width, height
 
   def __str__(self):
     return str(self.cave_gen)
@@ -61,6 +62,7 @@ class OreCaveGenerator:
       if y_range[1] > self.height - 1:
         y_range[0] -= (y_range[1] - self.height - 1)
         y_range[1] = self.height - 1
+      print name, y_range
       self.cave_gen.generateCave(y_range=y_range)
     self.cave_gen.fillInEdges()
     self.land = self.cave_gen.land
