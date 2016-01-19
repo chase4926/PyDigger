@@ -8,7 +8,7 @@ fields within it's width and height. These ore fields can then be applied to a
 regular cave system to make a ore-filled cave.
 """
 
-import cave_generator as cgen
+from . import cave_generator as cgen
 import yaml
 
 
@@ -33,9 +33,9 @@ class OreCaveGenerator:
                                        angle_deviation=180,
                                        path_width=(1,2))
     # (Minimum percent for caves, maximmum)
-    percent_range = range(20, 60)
+    percent_range = list(range(20, 60))
     # Determine the minimum and maximum z levels
-    minz = self.ores_dict[self.ores_dict.keys()[0]]['z']
+    minz = self.ores_dict[list(self.ores_dict.keys())[0]]['z']
     maxz = minz
     for name in self.ores_dict:
       ore = self.ores_dict[name]
@@ -68,4 +68,4 @@ class OreCaveGenerator:
 
 if __name__ == "__main__":
   cave_gen = OreCaveGenerator(width=160, height=62, filename="../ores_test.yaml")
-  print cave_gen
+  print(cave_gen)

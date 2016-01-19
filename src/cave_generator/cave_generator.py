@@ -191,6 +191,6 @@ class CaveGenerator:
 # --Debug script--
 if __name__ == "__main__":
   cave_gen = CaveGenerator(width=160, height=62, angle_deviation=60, caves_percent=100, fill="wall", empty="hole")
-  print cave_gen.generateCave()
+  print(cave_gen.generateCave())
   #print cave_gen.getCornerPoints(4, 5)
   #print cave_gen.getPathPoints(4, 5, 3) # Default radius is 3!!!

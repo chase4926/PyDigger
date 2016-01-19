@@ -16,7 +16,7 @@ pip install beautifulsoup4
 pip install PyYAML
 """
 
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import yaml
 from bs4 import BeautifulSoup
 from lib_misc import getRandomColor
@@ -34,12 +34,12 @@ def read_html_file():
 
 try:
   # Open the URL
-  response = urllib2.urlopen('https://en.wikipedia.org/wiki/Abundance_of_elements_in_Earth%27s_crust')
+  response = urllib.request.urlopen('https://en.wikipedia.org/wiki/Abundance_of_elements_in_Earth%27s_crust')
   # Write updated version of file
   write_html_file(response.read())
-except urllib2.URLError:
-  print "Could not open url!"
-  print "Cached version will be used."
+except urllib.error.URLError:
+  print("Could not open url!")
+  print("Cached version will be used.")
 
 # Read the html into Soup
 soup = BeautifulSoup(read_html_file(), "html.parser")

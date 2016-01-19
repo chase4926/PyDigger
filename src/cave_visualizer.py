@@ -89,7 +89,7 @@ class GameWindow:
           self.running = False
         if event.type == KEYDOWN:
           if event.key == K_SPACE:
-            print "Generating new cave..."
+            print("Generating new cave...")
             self.cave_gen.caves_percent = 25
             self.cave_gen.generateCave(y_range=(10, 100))
             self.redraw_cave()

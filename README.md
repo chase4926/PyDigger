@@ -10,6 +10,13 @@ NOTE: elements-cached.html is a cached version of the following site's html:
 https://en.wikipedia.org/wiki/Abundance_of_elements_in_Earth%27s_crust
 ---
 
+###Requirements###
+
++ Python 3 (tested using 3.5) NOTE: For Python 2, use previous commit
++ PyGame (tested using 1.9.2a0 for 3.5)
++ PyYAML (pip install PyYAML)
+
+
 ###Ore dispersal###
 
 + Use a public resource on Earth's ores and pull data from it to create yaml file
